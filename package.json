@@ -1,0 +1,27 @@
+{
+  "name": "grid-combinatorics",
+  "version": "1.0.0",
+  "description": "Application to work with combinatorial objects on a grid",
+  "main": "index.js",
+  "dependencies": {
+    "backbone": "^1.4.0",
+    "pixi.js": "^5.1.1",
+    "underscore": "^1.9.1"
+  },
+  "devDependencies": {
+    "coffeescript": "^2.4.1"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bgillesp/grid-combinatorics.git"
+  },
+  "author": "Bryan Gillespie",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/bgillesp/grid-combinatorics/issues"
+  },
+  "homepage": "https://github.com/bgillesp/grid-combinatorics#readme"
+}
