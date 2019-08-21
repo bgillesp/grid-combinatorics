@@ -24,5 +24,5 @@ app.get('/', (req, res) => {
 
 app.listen(port, () => {
   // open(`http://localhost:${port}`);
-  console.log(`App listening on port ${port}!`);
+  console.log(`App listening on port: ${port}`);
 });

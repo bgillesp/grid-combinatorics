@@ -19,6 +19,7 @@ const hmr = require('browserify-hmr'); // high severity vulnerability, don't use
 const source = require('vinyl-source-stream');
 const buffer = require('vinyl-buffer');
 const watchify = require('watchify');
+const coffeeify = require('coffeeify');
 const {argv} = require('yargs');
 const log = require('fancy-log');
 require('@babel/register'); // Needed for mocha tests
@@ -36,9 +37,9 @@ const config = {
   paths: {
     baseDir: PROD ? 'build' : 'dist',
     html: src + '/index.html',
-    entry: src + '/index.js',
-    js: src + '/**/*.js',
-    test: src +'/**/*.test.js',
+    entry: src + '/index.coffee',
+    js: src + '/**/*.{js,coffee}',
+    test: src +'/**/*.test.{js,coffee}',
     css: src + '/**/*.scss',
     fonts: src + '/fonts/**/*'
   }
@@ -50,7 +51,8 @@ const b = browserify({
   debug: true,
   plugin: PROD ? [] : [watchify, hmr],
   cache: {},
-  packageCache: {}
+  packageCache: {},
+  transform: [coffeeify]
 })
 .transform('babelify');
 b.on('update', bundle_js);
@@ -75,7 +77,7 @@ function lint() {
 // Unit tests
 function test() {
   return gulp.src(config.paths.test, {read: false})
-  .pipe(mocha());
+  .pipe(mocha({ "require": ["coffeescript/register"] }));
 }
 
 // Copies our index.html file from the app folder to either the dist or build folder, depending on the node environment

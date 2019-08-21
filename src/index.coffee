@@ -1,0 +1,1 @@
+app = require('./base.coffee');
