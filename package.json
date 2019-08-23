@@ -4,10 +4,14 @@
   "description": "Application to work with combinatorial objects on a grid",
   "main": "index.js",
   "dependencies": {
+    "@tweenjs/tween.js": "^17.4.0",
     "backbone": "^1.4.0",
     "backbone.localstorage": "^2.0.2",
+    "bourbon": "^6.0.0",
+    "bourbon-neat": "^4.0.0",
     "jquery": "^3.4.1",
-    "pixi.js": "^5.1.1",
+    "normalize.css": "^8.0.1",
+    "two.js": "^0.7.0-beta.3",
     "underscore": "^1.9.1"
   },
   "devDependencies": {
@@ -19,8 +23,10 @@
     "browserify-hmr": "^0.3.7",
     "connect-livereload": "^0.6.1",
     "del": "^5.0.0",
+    "eslint-utils": "^1.4.2",
     "fancy-log": "^1.3.3",
     "gulp": "^4.0.2",
+    "gulp-autoprefixer": "^7.0.0",
     "gulp-clean-css": "^4.2.0",
     "gulp-concat": "^2.6.1",
     "gulp-cond": "^1.0.0",

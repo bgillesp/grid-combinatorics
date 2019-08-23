@@ -11,6 +11,7 @@ const nodemon = require("gulp-nodemon");
 const sass = require("gulp-sass");
 const sourcemaps = require("gulp-sourcemaps");
 const minifyJS = require("gulp-uglify");
+const autoprefixer = require("gulp-autoprefixer");
 
 // Other libraries
 const browserify = require("browserify");
@@ -21,6 +22,8 @@ const buffer = require("vinyl-buffer");
 const watchify = require("watchify");
 const { argv } = require("yargs");
 const log = require("fancy-log");
+const bourbon = require("bourbon").includePaths;
+const bourbon_n = require("bourbon-neat").includePaths;
 require("@babel/register"); // Needed for mocha tests
 
 // If gulp was called in the terminal with the --prod flag, set the node environment to production
@@ -41,7 +44,8 @@ const config = {
     test: src + "/**/*.test.js",
     css: src + "/**/*.scss",
     fonts: src + "/fonts/**/*"
-  }
+  },
+  sassIncludes: [].concat(bourbon).concat(bourbon_n)
 };
 
 // Browserify specific configuration
@@ -88,9 +92,12 @@ function html() {
 // Bundles our vendor and custom CSS. Sourcemaps are used in development, while minification is used in production.
 function css() {
   return gulp
-    .src([config.paths.css])
+    .src(["node_modules/normalize.css/normalize.css", config.paths.css])
     .pipe(cond(!PROD, sourcemaps.init()))
-    .pipe(sass().on("error", sass.logError))
+    .pipe(
+      sass({ includePaths: config.sassIncludes }).on("error", sass.logError)
+    )
+    .pipe(autoprefixer({ cascade: false }))
     .pipe(concat("bundle.css"))
     .pipe(cond(PROD, minifyCSS()))
     .pipe(cond(!PROD, sourcemaps.write()))
