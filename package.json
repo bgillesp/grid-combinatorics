@@ -21,6 +21,7 @@
     "@babel/register": "^7.5.5",
     "babelify": "^10.0.0",
     "browserify-hmr": "^0.3.7",
+    "chai": "^4.2.0",
     "connect-livereload": "^0.6.1",
     "del": "^5.0.0",
     "eslint-utils": "^1.4.2",

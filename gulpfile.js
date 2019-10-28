@@ -41,7 +41,7 @@ const config = {
     html: src + "/index.html",
     entry: src + "/index.js",
     js: src + "/**/*.js",
-    test: src + "/**/*.test.js",
+    test: src + "/test/**/*.js",
     css: src + "/**/*.scss",
     fonts: src + "/fonts/**/*"
   },
@@ -78,7 +78,10 @@ function lint() {
 
 // Unit tests
 function test() {
-  return gulp.src(config.paths.test, { read: false }).pipe(mocha());
+  return gulp
+    .src(config.paths.test, { read: false })
+    .pipe(mocha({ reporter: "spec" }))
+    .on("error", err => gulp.emit("end"));
 }
 
 // Copies our index.html file from the app folder to either the dist or build folder, depending on the node environment
