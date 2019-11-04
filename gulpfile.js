@@ -41,7 +41,7 @@ const config = {
     html: src + "/index.html",
     entry: src + "/index.js",
     js: src + "/**/*.js",
-    test: src + "/test/**/*.js",
+    test: src + "/**/test_*.js",
     css: src + "/**/*.scss",
     fonts: src + "/fonts/**/*"
   },

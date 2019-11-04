@@ -1,12 +1,14 @@
-// const _ = require("underscore");
+const _ = require("underscore");
 const $ = require("jquery");
 const jQuery = $;
 // const Backbone = require("backbone");
 // const BbLoc = require("backbone.localstorage");
 const Two = require("two.js");
 const Tween = require("@tweenjs/tween.js");
-const Grid = require("./grid.js").Grid;
-const App = require("./app.js");
+const Grid = require("../grid.js").Grid;
+const Config = require("./config.js");
+const UndoQueue = require("../operations/undo_queue.js");
+const CreateBoxOperation = require("../operations/create_box.js");
 
 const Vector = Two.Vector;
 
@@ -41,8 +43,20 @@ function setViewport(two, x_min, x_max, y_min, y_max, border = 0.1) {
   two.scene.translation = new Vector(-origin_x, -origin_y);
 }
 
+var app = {};
+
 let display = $("#grid-display")[0];
-var grid = new Grid(display, App);
+app.display = display;
+
+var grid = new Grid(display, Config);
+app.grid = grid;
+grid.add(1, 1, "H");
+grid.remove(1, 1);
+
+var init_queue = [];
+var undo_queue = new UndoQueue();
+
+// Initialize application to nontrivial state
 
 let coords = [
   new Vector(0, 0),
@@ -60,8 +74,72 @@ let labels = ["1", "2", "3", "4", "5", "6", "7", "8", "9"];
 for (let i = 0; i < coords.length; i++) {
   let v = coords[i];
   let label = labels[i];
-  grid.add(v.x, v.y, label);
+  let op = new CreateBoxOperation(v.x, v.y, label);
+  init_queue.push(op);
 }
+
+function execute(op) {
+  op.execute(app);
+  undo_queue.push(op);
+}
+
+function undo() {
+  var op = undo_queue.pop_undo();
+  if (!_.isUndefined(op)) {
+    op.undo(app);
+  }
+}
+
+function redo() {
+  var op = undo_queue.pop_redo();
+  if (!_.isUndefined(op)) {
+    op.execute(app);
+  }
+}
+
+// function execute_from_queue(queue) {
+//   return e => {
+//     if (queue.length > 0) {
+//       var op = init_queue.pop();
+//       op.execute(app);
+//       undo_queue.push(op);
+//     }
+//   };
+// }
+
+function button1_onclick(e) {
+  if (init_queue.length > 0) {
+    var op = init_queue.pop();
+    execute(op);
+  }
+}
+function button2_onclick(e) {
+  undo();
+}
+
+function button3_onclick(e) {
+  redo();
+}
+
+let button1 = $("#input1");
+button1.on("click", button1_onclick);
+let button2 = $("#input2");
+button2.on("click", button2_onclick);
+let button3 = $("#input3");
+button3.on("click", button3_onclick);
+
+// while (init_queue.length > 0) {
+//   var op = init_queue.pop();
+//   op.execute(app);
+//   undo_queue.push(op);
+// }
+
+// function add_interactivity(shape) {
+//   var onclick = e => {
+//     e.preventDefault();
+//     console.log(e);
+//   };
+// }
 
 setViewport(grid.two, 0, 4, 0, 5);
 
@@ -71,18 +149,20 @@ setViewport(grid.two, 0, 4, 0, 5);
 // }
 // requestAnimationFrame(animate);
 
-let box = grid.get(4);
-let anim1 = new Tween.Tween(box.render.main.translation)
-  .to({ x: 2, y: 1 }, 1000)
-  .easing(Tween.Easing.Quadratic.Out);
-
-let anim2 = new Tween.Tween(box.render.main.translation)
-  .to({ x: 2, y: 0 }, 1000)
-  .easing(Tween.Easing.Quadratic.Out);
-
-anim1.chain(anim2);
-anim2.chain(anim1);
-anim1.start();
+//////////// TEST ANIMATION ///
+// let box = grid.get(4);
+// let anim1 = new Tween.Tween(box.render.main.translation)
+//   .to({ x: 2, y: 1 }, 1000)
+//   .easing(Tween.Easing.Quadratic.Out);
+//
+// let anim2 = new Tween.Tween(box.render.main.translation)
+//   .to({ x: 2, y: 0 }, 1000)
+//   .easing(Tween.Easing.Quadratic.Out);
+//
+// anim1.chain(anim2);
+// anim2.chain(anim1);
+// anim1.start();
+///////////// END TEST ANIMATION ///
 
 grid.two.bind("update", function(frameCount) {
   // This code is called everytime two.update() is called.
@@ -90,4 +170,4 @@ grid.two.bind("update", function(frameCount) {
   Tween.update();
 });
 
-module.exports = App;
+// module.exports = app;

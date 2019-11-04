@@ -1,19 +1,8 @@
-class Operation {
-  constructor() {
-    // parameters of operation specification
-    this.params = {};
-    // memory for existing state to undo
-    this.memory = {};
-  }
+const Operation = require("./operation.js");
 
-  execute() {}
-
-  undo() {}
-}
-
-class MoveOperation extends Operation {
+class MoveBoxOperation extends Operation {
   constructor(box, x, y) {
-    super();
+    super("move_box");
     this.params.box = box;
     this.params.x = x;
     this.params.y = y;
@@ -21,11 +10,10 @@ class MoveOperation extends Operation {
     this.memory.y = box.y;
   }
 
-  execute() {
-    super.execute();
-    var box = this.params.box;
-    var x = this.params.x;
-    var y = this.params.y;
+  execute(app) {
+    let box = this.params.box;
+    let x = this.params.x;
+    let y = this.params.y;
     box.x = x;
     box.y = y;
     // TODO handle speed / timing
@@ -36,4 +24,10 @@ class MoveOperation extends Operation {
       box.render.anim[box.render.anim.length - 1];
     }
   }
+
+  undo(app) {
+    // ...
+  }
 }
+
+module.exports = MoveBoxOperation;

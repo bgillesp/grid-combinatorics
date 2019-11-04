@@ -1,9 +1,9 @@
 // const _ = require("underscore");
 const Two = require("two.js");
 const Vector = Two.Vector;
-const GridArray = require("./grid_array.js");
+const GridArray = require("./data_structures/grid_array.js");
 const Box = require("./box.js").Box;
-const App = require("./app.js");
+// const App = require("./app/app.js");
 
 /**
  * Wrapper class around GridArray to simplify operations needed for Tableau
@@ -52,11 +52,11 @@ class GridData extends GridArray {
  * Class to manage and coordinate boxes on a grid.
  */
 class Grid {
-  constructor(domParent) {
+  constructor(domParent, config) {
     this.parent = domParent;
     this.two = new Two({
-      width: App.config.grid_size.width,
-      height: App.config.grid_size.height,
+      width: config.grid_size.width,
+      height: config.grid_size.height,
       autostart: true
     });
     this.two.appendTo(domParent);
@@ -67,17 +67,23 @@ class Grid {
 
   add(x, y, label) {
     let box = new Box(x, y, label);
-    this.boxes.push(box);
+    this.data.add(x, y, box);
     this.two.add(box.render.main);
   }
+
+  remove(x, y) {
+    let box = this.data.get(x, y);
+    this.data.remove(x, y);
+    this.two.remove(box.render.main);
+  }
+
+  // _click_log(
 
   get(i) {
     return this.boxes[i];
   }
 
   move(x_start, y_start, x_end, y_end) {}
-
-  remove(x, y) {}
 }
 
 var T = {};

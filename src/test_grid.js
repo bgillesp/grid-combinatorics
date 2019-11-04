@@ -1,7 +1,7 @@
 const assert = require("chai").assert;
 
 const _ = require("underscore");
-const grid = require("../grid.js");
+const grid = require("./grid.js");
 
 describe("GridData", () => {
   var gd;
