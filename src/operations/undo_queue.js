@@ -15,7 +15,7 @@ class UndoQueue {
       this.redo_queue.push(op);
       return op;
     } else {
-      return undefined;
+      return null;
     }
   }
 
@@ -25,7 +25,7 @@ class UndoQueue {
       this.undo_queue.push(op);
       return op;
     } else {
-      return undefined;
+      return null;
     }
   }
 }

@@ -58,10 +58,12 @@ describe("GridArray", () => {
       });
 
       it("should raise an error for non-integer coordinates", () => {
-        let fn1 = ga.set.bind("foo", y, val);
-        assert.throws(fn1);
-        let fn2 = ga.set.bind(x, 1.5, val);
-        assert.throws(fn2);
+        assert.throws(() => {
+          ga.set("foo", y, val);
+        });
+        assert.throws(() => {
+          ga.set(x, 1.5, val);
+        });
       });
     });
   });
@@ -86,10 +88,12 @@ describe("GridArray", () => {
       });
 
       it("should raise an error for non-integer coordinates", () => {
-        let fn1 = ga.get.bind("foo", y);
-        assert.throws(fn1);
-        let fn2 = ga.get.bind(x, 1.5);
-        assert.throws(fn2);
+        assert.throws(() => {
+          ga.get("foo", y);
+        });
+        assert.throws(() => {
+          ga.get(x, 1.5);
+        });
       });
     });
 
@@ -105,10 +109,12 @@ describe("GridArray", () => {
       });
 
       it("should raise an error for non-integer coordinates", () => {
-        let fn1 = ga.remove.bind("foo", y);
-        assert.throws(fn1);
-        let fn2 = ga.remove.bind(x, 1.5);
-        assert.throws(fn2);
+        assert.throws(() => {
+          ga.remove("foo", y);
+        });
+        assert.throws(() => {
+          ga.remove(x, 1.5);
+        });
       });
     });
 
@@ -119,10 +125,12 @@ describe("GridArray", () => {
       });
 
       it("should raise an error for non-integer coordinates", () => {
-        let fn1 = ga.has.bind("foo", y);
-        assert.throws(fn1);
-        let fn2 = ga.has.bind(x, 1.5);
-        assert.throws(fn2);
+        assert.throws(() => {
+          ga.has("foo", y);
+        });
+        assert.throws(() => {
+          ga.has(x, 1.5);
+        });
       });
     });
 
@@ -149,18 +157,24 @@ describe("GridArray", () => {
 
   describe("Static", () => {
     describe("_check_input_coords(x, y)", () => {
-      const fn = GridArray._check_input_coords;
-
       it("should check for inputs which are not numbers", () => {
         const non_numeric = "a";
-        assert.throws(fn.bind(non_numeric, 0));
-        assert.throws(fn.bind(0, non_numeric));
+        assert.throws(() => {
+          GridArray._check_input_coords(non_numeric, 0);
+        });
+        assert.throws(() => {
+          GridArray._check_input_coords(0, non_numeric);
+        });
       });
 
       it("should check for numerical inputs which are not integers", () => {
         const non_integer = 1.5;
-        assert.throws(fn.bind(non_integer, 0));
-        assert.throws(fn.bind(0, non_integer));
+        assert.throws(() => {
+          GridArray._check_input_coords(non_integer, 0);
+        });
+        assert.throws(() => {
+          GridArray._check_input_coords(0, non_integer);
+        });
       });
     });
   });

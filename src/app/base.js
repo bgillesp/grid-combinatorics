@@ -85,14 +85,14 @@ function execute(op) {
 
 function undo() {
   var op = undo_queue.pop_undo();
-  if (!_.isUndefined(op)) {
+  if (!_.isNull(op)) {
     op.undo(app);
   }
 }
 
 function redo() {
   var op = undo_queue.pop_redo();
-  if (!_.isUndefined(op)) {
+  if (!_.isNull(op)) {
     op.execute(app);
   }
 }
