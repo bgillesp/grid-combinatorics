@@ -135,15 +135,11 @@ describe("DAG", () => {
       });
 
       it("should remove a vertex from a DAG", () => {
-        console.log(dag._edges_from);
         assert.equal(dag.num_vertices(), n_verts - 1);
       });
 
       it("should delete all edges incident to deleted vertex and reindex remining vertices", () => {
         let compare = new DAG(n_verts - 1, remaining_edges);
-        console.log(remaining_edges);
-        console.log(dag._edges_from);
-        console.log(compare._edges_from);
         assert(dag.isEqual(compare));
       });
     });
