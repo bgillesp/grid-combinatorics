@@ -1,6 +1,5 @@
 const assert = require("chai").assert;
 
-const _ = require("underscore");
 const FlexTimer = require("./flex_timer.js").FlexTimer;
 const RateFunction = require("./flex_timer.js").RateFunction;
 
@@ -88,15 +87,13 @@ describe("RateFunction", () => {
         assert.equal(rf.rate(time - 1), 1);
       });
 
+      it("should return end rate at time", () => {
+        assert.equal(rf.rate(time), rate);
+      });
+
       it("should return end rate after time", () => {
         assert.equal(rf.rate(time), rate);
         assert.equal(rf.rate(time + 1), rate);
-      });
-    });
-
-    describe("rate_fn", () => {
-      it("should return point rate", () => {
-        assert.approximately(rf.rate_fn(time), rate, epsilon);
       });
     });
   });
@@ -132,7 +129,7 @@ describe("RateFunction", () => {
   describe("CompressionRateFunction", () => {
     const start = 100,
       end = 1100,
-      target_duration = 500;
+      target_duration = 2000;
 
     beforeEach(() => {
       rf = new RateFunction.CompressionRateFunction(
@@ -166,13 +163,29 @@ describe("FlexTimer", () => {
     ft = new FlexTimer(0, step_size);
   });
 
-  describe("constructor", () => {
-    it("should produce an object with expected starting parameters", () => {
-      assert.isObject(ft);
-      assert.equal(ft.get_global_time(), 0);
-      assert.equal(ft.get_local_time(), 0);
-      assert.equal(ft.get_ambient_rate(), 1);
-      assert.isEmpty(ft.get_rate_functions());
+  describe("Initialization", () => {
+    describe("constructor", () => {
+      it("should produce an object with expected starting parameters", () => {
+        assert.isObject(ft);
+        assert.equal(ft.get_global_time(), 0);
+        assert.equal(ft.get_local_time(), 0);
+        assert.equal(ft.get_ambient_rate(), 1);
+        assert.isEmpty(ft.get_rate_functions());
+      });
+    });
+
+    describe("add_rate_function", () => {
+      it("should add a rate function", () => {
+        ft.add_rate_function(new RateFunction(0, 1, 1));
+        assert.lengthOf(ft.get_rate_functions(), 1);
+        assert.equal(ft.get_ambient_rate(), 1);
+      });
+
+      it("should incorporate expired rate function into ambient rate", () => {
+        ft.add_rate_function(new RateFunction(-2, -1, 2));
+        assert.lengthOf(ft.get_rate_functions(), 0);
+        assert.equal(ft.get_ambient_rate(), 2);
+      });
     });
   });
 
@@ -181,7 +194,7 @@ describe("FlexTimer", () => {
       rf_2 = new RateFunction.LinearRateFunction(1, 2, 1, 2),
       rf_3 = new RateFunction.PointRateFunction(1, 2);
     const times = [0, 1, 2, 3, 4, 5],
-      values = [0, 1.0625, 4.375, 10.625, 17.875, 25.875],
+      values = [0, 1.125, 5.28125, 11.78125, 19.28125, 27.28125],
       ambient_rate = [1, 2, 4, 4, 8, 8],
       remaining_fns = [3, 2, 1, 1, 0, 0];
 
@@ -226,5 +239,26 @@ describe("FlexTimer", () => {
         });
       });
     });
+  });
+});
+
+describe("FlexTimer Interval Compression", () => {
+  var ft;
+  const interval_length = 1000,
+    local_duration = 5000,
+    step_size = 50,
+    ramp = 1 / 3;
+
+  it("should adjust the interval to approximately the desired duration", () => {
+    ft = new FlexTimer(0, step_size);
+    ft.add_rate_function(
+      new RateFunction.CompressionRateFunction(
+        0,
+        interval_length,
+        local_duration,
+        ramp
+      )
+    );
+    assert.approximately(ft.get(interval_length), local_duration, 1);
   });
 });
