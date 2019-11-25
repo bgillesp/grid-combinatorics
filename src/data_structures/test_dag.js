@@ -42,7 +42,7 @@ describe("DAG", () => {
       });
     });
 
-    describe("isEqual", () => {
+    describe("is_equal", () => {
       const n_verts = 3;
       var dag2;
       var dag3;
@@ -50,16 +50,16 @@ describe("DAG", () => {
       it("should return true if another DAG is equal", () => {
         dag = DAG.chain(n_verts);
         dag2 = DAG.chain(n_verts);
-        assert(dag.isEqual(dag2));
-        assert(dag2.isEqual(dag));
+        assert(dag.is_equal(dag2));
+        assert(dag2.is_equal(dag));
       });
 
       it("should return false if another DAG is not equal", () => {
         dag = DAG.chain(n_verts);
         dag2 = DAG.chain(n_verts + 1);
         dag3 = DAG.antichain(n_verts);
-        assert(!dag.isEqual(dag2));
-        assert(!dag.isEqual(dag3));
+        assert(!dag.is_equal(dag2));
+        assert(!dag.is_equal(dag3));
       });
     });
   });
@@ -140,7 +140,7 @@ describe("DAG", () => {
 
       it("should delete all edges incident to deleted vertex and reindex remining vertices", () => {
         let compare = new DAG(n_verts - 1, remaining_edges);
-        assert(dag.isEqual(compare));
+        assert(dag.is_equal(compare));
       });
     });
   });

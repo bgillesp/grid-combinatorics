@@ -57,7 +57,7 @@ class DAG {
    * @param  {DAG} other - The other DAG to compare to.
    * @return {Boolean}   - Whether the two DAGs are equal.
    */
-  isEqual(other) {
+  is_equal(other) {
     if (this.num_vertices() != other.num_vertices()) return false;
     for (let i = 0; i < this._edges_from.length; i++) {
       if (!util.set_equal(this._edges_from[i], other._edges_from[i])) {
