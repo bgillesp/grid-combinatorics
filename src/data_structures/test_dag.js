@@ -10,11 +10,11 @@ describe("DAG", () => {
     describe("constructor", () => {
       const n_verts = 3;
 
-      it("should produce an object", () => {
+      it("should produce an object of type DAG", () => {
         dag = new DAG();
-        assert.typeOf(dag, "object");
+        assert(dag instanceof DAG);
         dag = new DAG(n_verts);
-        assert.typeOf(dag, "object");
+        assert(dag instanceof DAG);
       });
 
       it("should have the correct number of vertices", () => {
