@@ -268,7 +268,7 @@ class LayerMap {
    * @param  {[type]}  keys - The prefix of keys.
    * @return {Boolean}      - Whether any values have keys prefixed by `keys`.
    */
-  has_prefix(keys) {
+  has_descendent(keys) {
     return this.size(keys) > 0;
   }
 
@@ -281,9 +281,9 @@ class LayerMap {
    * @param {Array}    keys - The key sequence.
    * @param {LayerMap} map  - The LayerMap to use as overwriting values.
    */
-  set_prefix(keys, map) {
+  set_submap(keys, map) {
     if (map.size() == 0) {
-      this.delete_prefix(keys);
+      this.delete_submap(keys);
     } else {
       let target = this._get_descendent_map(keys, true);
       let old_size = target.size(),
@@ -299,18 +299,84 @@ class LayerMap {
    * @param  {Array} keys - The sequence of keys.
    * @return {LayerMap}   - The copied submap.
    */
-  get_prefix(keys) {
+  get_submap(keys) {
     return this._copy(keys, true);
   }
 
   /**
    * Delete all values of this LayerMap prefixed by the given sequence of keys.
-   * @param  {[type]} keys - The sequence of keys.
-   * @return {[type]}      [description]
+   * @param  {Array}   keys - The sequence of keys.
+   * @return {Boolean}      - Whether any values were deleted.
    */
-  delete_prefix(keys) {
+  delete_submap(keys) {
     let map = this._get_descendent_map(keys);
     return map ? map.clear() : false;
+  }
+
+  /**
+   * Generator to return all nodes currently in this LayerMap which are (strict)
+   * ancestors of the specified sequence of keys.
+   * @param  {Array}     keys - The sequence of keys.
+   * @return {Generator}      - The generator.
+   */
+  *_ancestor_nodes(keys) {
+    let map = this;
+    for (const key of keys) {
+      yield map;
+      if (map._map.has(key)) {
+        map = map._map.get(key);
+      } else {
+        break;
+      }
+    }
+  }
+
+  /**
+   * Return whether any values exist in this LayerMap for key sequences which
+   * are a strict prefix of the given key sequence.
+   * @param  {Array}  keys - The sequence of keys.
+   * @return {Boolean}     - Whether an ancestor value exists.
+   */
+  has_ancestor(keys) {
+    for (const node of this._ancestor_nodes(keys)) {
+      if (node._has_value()) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Return an Array of the ancestor entries of a given key sequence.  Entries
+   * are represented as [key, value] pairs.
+   * @param  {Array} keys - The sequence of keys.
+   * @return {Array}      - The entries which are strict ancestors.
+   */
+  get_ancestors(keys) {
+    let ancestors = new Array();
+    for (const node of this._ancestor_nodes(keys)) {
+      if (node._has_value()) {
+        ancestors.push(new Array(node._get_value(), node._get_key_sequence()));
+      }
+    }
+    return ancestors;
+  }
+
+  /**
+   * Delete all strict ancestors of a given key sequence.  Returns whether any
+   * entries were deleted.
+   * @param  {Array}   keys - The sequence of keys.
+   * @return {Boolean}      - Whether any ancestors were deleted.
+   */
+  delete_ancestors(keys) {
+    if (this._has_ancestor(keys)) {
+      for (const node of this._ancestor_nodes(keys)) {
+        node._delete_value();
+      }
+      return true;
+    } else {
+      return false;
+    }
   }
 
   /**
@@ -356,11 +422,11 @@ class LayerMap {
    * Generate all of the entries of this LayerMap object which are prefixed by
    * the given sequence of keys.  Entries are formatted as pairs [key, value],
    * where key is an Array of keys and value is the corresponding value.
-   * @param  {Array}     [keys=null] - The sequence of keys.
-   * @return {Generator}             - The generator for entries.
+   * @param  {Array}     [prefix=null] - The sequence of keys.
+   * @return {Generator}               - The generator for entries.
    */
-  *entries(keys = null) {
-    for (const node of this._nodes(keys)) {
+  *entries(prefix = null) {
+    for (const node of this._nodes(prefix)) {
       if (node._has_value()) {
         yield new Array(node._get_value(), node._get_key_sequence());
       }
@@ -380,14 +446,14 @@ class LayerMap {
    * only passing those with a given prefix of keys.  The format of the callback
    * function is callback(value, keys, map), where map is the LayerMap object
    * being traversed.
-   * @param  {Function} callback   - The callback function.
-   * @param  {Array}   [keys=null] - The sequence of keys.
-   * @param  {Object}   thisArg    - The object to use as the scope of the
-   *                                 callbacks, used as `this`.
+   * @param  {Function} callback     - The callback function.
+   * @param  {Array}   [prefix=null] - The sequence of keys.
+   * @param  {Object}   thisArg      - The object to use as the scope of the
+   *                                   callbacks, used as `this`.
    */
-  forEach(callback, keys = null, thisArg = null) {
+  forEach(callback, prefix = null, thisArg = null) {
     if (thisArg) callback = callback.bind(thisArg);
-    for (const [value, key] of this.entries(keys)) {
+    for (const [value, key] of this.entries(prefix)) {
       callback(value, key, this);
     }
   }
@@ -395,22 +461,22 @@ class LayerMap {
   /**
    * Generate all of the key sequences of values stored in this LayerMap object,
    * formatted as arrays of keys.
-   * @param  {Array}     [keys=null] - The sequence of keys.
+   * @param  {Array}     [prefix=null] - The sequence of keys.
    * @return {Generator}             - The generator.
    */
-  *keys(keys = null) {
-    for (const [value, key] of this.entries(keys)) {
+  *keys(prefix = null) {
+    for (const [value, key] of this.entries(prefix)) {
       yield key;
     }
   }
 
   /**
    * Generate all of the values stored in this LayerMap object.
-   * @param  {Array}     [keys=null] - The sequence of keys.
-   * @return {Generator}             - The generator.
+   * @param  {Array}     [prefix=null] - The sequence of keys.
+   * @return {Generator}               - The generator.
    */
-  *values(keys = null) {
-    for (const [value, key] of this.entries(keys)) {
+  *values(prefix = null) {
+    for (const [value, key] of this.entries(prefix)) {
       yield value;
     }
   }

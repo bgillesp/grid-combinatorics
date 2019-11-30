@@ -308,33 +308,33 @@ describe("LayerMap", () => {
     });
   });
 
-  describe("has_prefix", () => {
+  describe("has_descendent", () => {
     it("should return true for a proper prefix", () => {
       key_seqs.nontrivial_prefix.forEach(seq => {
-        assert.isTrue(map.has_prefix(seq));
+        assert.isTrue(map.has_descendent(seq));
       });
     });
 
     it("should return true for an exact key match", () => {
       key_seqs.set_keys.forEach(seq => {
-        assert.isTrue(map.has_prefix(seq));
+        assert.isTrue(map.has_descendent(seq));
       });
     });
 
     it("should return false for a suffix", () => {
       key_seqs.nontrivial_suffix.forEach(seq => {
-        assert.isFalse(map.has_prefix(seq));
+        assert.isFalse(map.has_descendent(seq));
       });
     });
 
     it("should return false for unrelated key sequences", () => {
       key_seqs.not_comparable.forEach(seq => {
-        assert.isFalse(map.has_prefix(seq));
+        assert.isFalse(map.has_descendent(seq));
       });
     });
   });
 
-  describe("set_prefix", () => {
+  describe("set_submap", () => {
     const replace_prefix = ["foo"];
 
     it("should set the root of the map to the value of another map", () => {
@@ -349,7 +349,7 @@ describe("LayerMap", () => {
       for (const [key, value] of other_map_data) {
         other_map.set(key, value);
       }
-      map.set_prefix(replace_prefix, other_map);
+      map.set_submap(replace_prefix, other_map);
       assert.deepEqual(flatten(map), target);
     });
 
@@ -358,25 +358,25 @@ describe("LayerMap", () => {
         "": 31,
         ".fah": "a"
       };
-      map.set_prefix(replace_prefix, new LayerMap());
+      map.set_submap(replace_prefix, new LayerMap());
       assert.deepEqual(flatten(map), target);
     });
   });
 
-  describe("get_prefix", () => {
+  describe("get_submap", () => {
     it("should return an unprefixed copy of the specified entries", () => {
       const prefix = ["foo"],
         target = {
           ".bar": null,
           ".baz": undefined
         };
-      let prefix_map = map.get_prefix(prefix);
-      assert.deepEqual(flatten(prefix_map), target);
+      let submap = map.get_submap(prefix);
+      assert.deepEqual(flatten(submap), target);
     });
   });
 
-  describe("delete_prefix", () => {
-    const delete_prefix = ["foo"],
+  describe("delete_submap", () => {
+    const prefix = ["foo"],
       target = {
         "": 31,
         ".fah": "a"
@@ -384,10 +384,10 @@ describe("LayerMap", () => {
       num_nodes = 2;
 
     beforeEach(() => {
-      map.delete_prefix(delete_prefix);
+      map.delete_submap(prefix);
     });
 
-    it("should delete a prefix", () => {
+    it("should delete a submap", () => {
       assert.deepEqual(flatten(map), target);
     });
 
@@ -396,6 +396,14 @@ describe("LayerMap", () => {
       assert.equal(node_set.size, num_nodes);
     });
   });
+
+  describe("_ancestor_nodes", () => {});
+
+  describe("has_ancestor", () => {});
+
+  describe("get_ancestors", () => {});
+
+  describe("delete_ancestors", () => {});
 
   describe("_nodes", () => {
     it("should visit all nodes", () => {
