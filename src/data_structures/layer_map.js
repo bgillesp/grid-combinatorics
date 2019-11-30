@@ -1,4 +1,10 @@
+/**
+ * [LayerMap description]
+ */
 class LayerMap {
+  /**
+   * Construct a new empty LayerMap object.
+   */
   constructor() {
     this._parent = null;
     this._parent_key = null;
@@ -298,31 +304,35 @@ class LayerMap {
    * @return {Array} - The sequence of keys.
    */
   _get_key_sequence() {
-    let map = this;
-    let keys = new Array();
+    let key = this._parent_key,
+      map = this._parent;
+    let key_seq = new Array();
     while (map) {
-      keys.push(map._parent_key);
+      key_seq.push(key);
+      key = map._parent_key;
       map = map._parent;
     }
-    return keys.reverse();
+    return key_seq.reverse();
   }
 
   /**
-   * Call the specified callback function for each key, value pair.  The format
-   * of the callback function is callback(value, keys, map), where map is the
-   * LayerMap object being traversed.
-   * @param  {Function} callback [description]
+   * Generate all of the entries of this LayerMap object which are prefixed by
+   * the given sequence of keys.  Entries are formatted as pairs [key, value],
+   * where key is an Array of keys and value is the corresponding value.
+   * @param  {Array}     [keys=null] - The sequence of keys.
+   * @return {Generator}             - The generator for entries.
    */
-  forEach(callback, thisArg = null) {
-    if (thisArg) callback = callback.bind(thisArg);
+  *entries(keys = null) {
+    let start_map = keys ? this._get_descendent_map(keys) : this;
+    if (!start_map) return;
     let pending = new Array();
-    pending.push(this);
+    pending.push(start_map);
     for (let i = 0; i < pending.length; ++i) {
-      let map = pending[i];
+      let map = pending[i]; // TODO memory-performance tradeoff
       if (map._has_value()) {
-        callback(map._get_value(), map._get_key_sequence(), this);
+        yield new Array(map._get_value(), map._get_key_sequence());
       }
-      this._map.forEach(submap => {
+      map._map.forEach(submap => {
         if (submap.size() > 0) {
           pending.push(submap);
         }
@@ -330,13 +340,54 @@ class LayerMap {
     }
   }
 
-  // *entries(keys = null) {
-  //   let map = keys ? this._get_descendent_map(keys) : this;
-  //   if (!map) return;
-  // }
-}
+  /**
+   * The default generator for the LayerMap object.  This is an alias for
+   * LayerMap.entries().
+   */
+  [Symbol.iterator]() {
+    return this.entries();
+  }
 
-class LayerMapIterator {}
+  /**
+   * Call the specified callback function for each [key, value] pair, optionally
+   * only passing those with a given prefix of keys.  The format of the callback
+   * function is callback(value, keys, map), where map is the LayerMap object
+   * being traversed.
+   * @param  {Function} callback   - The callback function.
+   * @param  {Array}   [keys=null] - The sequence of keys.
+   * @param  {Object}   thisArg    - The object to use as the scope of the
+   *                                 callbacks, used as `this`.
+   */
+  forEach(callback, keys = null, thisArg = null) {
+    if (thisArg) callback = callback.bind(thisArg);
+    for (const [value, key] of this.entries(keys)) {
+      callback(value, key, this);
+    }
+  }
+
+  /**
+   * Generate all of the key sequences of values stored in this LayerMap object,
+   * formatted as arrays of keys.
+   * @param  {Array}     [keys=null] - The sequence of keys.
+   * @return {Generator}             - The generator.
+   */
+  *keys(keys = null) {
+    for (const [value, key] of this.entries(keys)) {
+      yield key;
+    }
+  }
+
+  /**
+   * Generate all of the values stored in this LayerMap object.
+   * @param  {Array}     [keys=null] - The sequence of keys.
+   * @return {Generator}             - The generator.
+   */
+  *values(keys = null) {
+    for (const [value, key] of this.entries(keys)) {
+      yield value;
+    }
+  }
+}
 
 ///////////////////////////////////////////////////////////////////
 //

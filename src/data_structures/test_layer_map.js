@@ -6,22 +6,22 @@ const LayerMap = require("./layer_map.js");
 describe("LayerMap", () => {
   var map;
 
-  describe("Initialization", () => {
-    describe("constructor", () => {
-      it("should produce an instance of LayerMap", () => {
-        map = new LayerMap();
-        assert.isTrue(map instanceof LayerMap);
-      });
+  describe("constructor", () => {
+    it("should produce an instance of LayerMap", () => {
+      map = new LayerMap();
+      assert.isTrue(map instanceof LayerMap);
     });
   });
 
   describe("Operations", () => {
+    var submap;
     const data = [
         [[], 31],
         [["fah"], "a"],
         [["foo", "bar"], null],
         [["foo", "baz"], undefined]
       ],
+      vals = [31, "a", null, undefined],
       key_seqs = {
         set_keys: [[], ["fah"], ["foo", "bar"], ["foo", "baz"]],
         nontrivial_prefix: [["foo"]],
@@ -29,13 +29,32 @@ describe("LayerMap", () => {
         not_comparable: [["bah"], ["foo", "bah"], ["foo", "bah", "dah"]],
         value_undefined: [["foo", "baz"]]
       },
-      map_size = 4;
+      map_size = 4,
+      primitive_copy = {
+        "": 31,
+        ".fah": "a",
+        ".foo.bar": null,
+        ".foo.baz": undefined
+      },
+      submap_prefix = ["foo"],
+      submap_size = 2,
+      submap_primitive_copy = {
+        ".foo.bar": null,
+        ".foo.baz": undefined
+      };
+
+    function stringify_key(keys) {
+      return keys.reduce((aggr, str) => {
+        return aggr + "." + str;
+      }, "");
+    }
 
     beforeEach(() => {
       map = new LayerMap();
       data.forEach(d => {
         map.set(d[0], d[1]);
       });
+      submap = map._get_descendent_map(submap_prefix);
     });
 
     describe("_get_descendent_map", () => {
@@ -145,6 +164,189 @@ describe("LayerMap", () => {
         key_seqs.not_comparable.forEach(seq => {
           assert.isUndefined(map.get(seq));
         });
+      });
+    });
+
+    describe("delete", () => {
+      it("should delete an element", () => {
+        for (const [key, value] of data) {
+          assert.isTrue(map.has(key));
+          map.delete(key);
+          assert.isFalse(map.has(key));
+        }
+      });
+
+      it("should reduce the size of the map", () => {
+        let target_size = map_size;
+        assert.equal(map.size(), map_size);
+        for (const [key, value] of data) {
+          map.delete(key);
+          target_size -= 1;
+          assert.equal(map.size(), target_size);
+        }
+      });
+    });
+
+    describe("clear", () => {
+      it("should clear the map", () => {
+        assert.equal(map.size(), map_size);
+        map.clear();
+        assert.equal(map.size(), 0);
+      });
+
+      it("should clear a submap and update sizes accordingly", () => {
+        assert.equal(submap.size(), submap_size);
+        submap.clear();
+        assert.equal(submap.size(), 0);
+        assert.equal(map.size(), map_size - submap_size);
+      });
+    });
+
+    describe("has_prefix", () => {
+      it("should return true for a proper prefix", () => {
+        key_seqs.nontrivial_prefix.forEach(seq => {
+          assert.isTrue(map.has_prefix(seq));
+        });
+      });
+
+      it("should return true for an exact key match", () => {
+        key_seqs.set_keys.forEach(seq => {
+          assert.isTrue(map.has_prefix(seq));
+        });
+      });
+
+      it("should return false for a suffix", () => {
+        key_seqs.nontrivial_suffix.forEach(seq => {
+          assert.isFalse(map.has_prefix(seq));
+        });
+      });
+
+      it("should return false for unrelated key sequences", () => {
+        key_seqs.not_comparable.forEach(seq => {
+          assert.isFalse(map.has_prefix(seq));
+        });
+      });
+    });
+
+    describe("set_prefix", () => {});
+
+    describe("get_prefix", () => {});
+
+    describe("delete_prefix", () => {});
+
+    describe("size", () => {
+      it("should return the size of the map", () => {
+        assert.equal(map.size(), map_size);
+      });
+
+      it("should return the size of a submap", () => {
+        assert.equal(submap.size(), submap_size);
+      });
+    });
+
+    describe("_get_key_sequence", () => {
+      it("should construct the key sequence associated to a submap", () => {
+        key_seqs.set_keys.forEach(seq => {
+          let submap = map._get_descendent_map(seq),
+            constructed_key_sequence = submap._get_key_sequence();
+          assert.deepEqual(constructed_key_sequence, seq);
+        });
+      });
+    });
+
+    describe("entries", () => {
+      it("should generate each entry of the map", () => {
+        let record = {};
+        for (const [value, key] of map.entries()) {
+          record[stringify_key(key)] = value;
+        }
+        assert.deepEqual(record, primitive_copy);
+      });
+
+      it("should generate the entries with a given prefix", () => {
+        let record = {};
+        for (const [value, key] of map.entries(submap_prefix)) {
+          record[stringify_key(key)] = value;
+        }
+        assert.deepEqual(record, submap_primitive_copy);
+      });
+    });
+
+    describe("iterator", () => {
+      it("should generate each entry of the map", () => {
+        let record = {};
+        for (const [value, key] of map) {
+          record[stringify_key(key)] = value;
+        }
+        assert.deepEqual(record, primitive_copy);
+      });
+    });
+
+    describe("forEach", () => {
+      it("should visit each entry of the map", () => {
+        let record = {};
+        map.forEach((value, key) => {
+          record[stringify_key(key)] = value;
+        });
+        assert.deepEqual(record, primitive_copy);
+      });
+
+      it("should visit the entries with a given prefix", () => {
+        let record = {};
+        map.forEach((value, key) => {
+          record[stringify_key(key)] = value;
+        }, submap_prefix);
+        assert.deepEqual(record, submap_primitive_copy);
+      });
+
+      it("should pass the calling map as the third argument", () => {
+        map.forEach((value, key, map_param) => {
+          assert.equal(map_param, map);
+        });
+      });
+
+      it("should allow setting the scope for non-arrow functions", () => {
+        let scope = {};
+        function fn() {
+          assert.equal(this, scope);
+        }
+        map.forEach(fn, null, scope);
+      });
+    });
+
+    describe("keys", () => {
+      it("should generate all the keys", () => {
+        let record = {};
+        for (const key of map.keys()) {
+          record[stringify_key(key)] = true;
+        }
+        assert.hasAllKeys(record, primitive_copy);
+      });
+
+      it("should generate all the keys with a given prefix", () => {
+        let record = {};
+        for (const key of map.keys(submap_prefix)) {
+          record[stringify_key(key)] = true;
+        }
+        assert.hasAllKeys(record, submap_primitive_copy);
+      });
+    });
+
+    describe("values", () => {
+      it("should generate all the values", () => {
+        let record = new Set();
+        for (const value of map.values()) {
+          record.add(value);
+        }
+        assert.deepEqual(record, new Set(Object.values(primitive_copy)));
+      });
+
+      it("should generate all the values with a given key prefix", () => {
+        let record = new Set();
+        for (const value of map.values(submap_prefix)) {
+          record.add(value);
+        }
+        assert.deepEqual(record, new Set(Object.values(submap_primitive_copy)));
       });
     });
   });
