@@ -41,9 +41,15 @@ describe("LayerMap", () => {
     }, "");
   }
 
-  function flatten(map) {
+  function flatten(gen) {
     let record = new Object();
-    for (const [value, key] of map.entries()) {
+    for (const val of gen) {
+      let key, value;
+      if (val instanceof LayerMap) {
+        [key, value] = [val._get_key_sequence(), val._get_value()];
+      } else {
+        [key, value] = val;
+      }
       record[stringify_key(key)] = value;
     }
     return record;
@@ -397,13 +403,94 @@ describe("LayerMap", () => {
     });
   });
 
-  describe("_ancestor_nodes", () => {});
+  describe("_ancestor_nodes", () => {
+    it("should generate nodes", () => {
+      for (const node of map._ancestor_nodes(["foo", "bar"])) {
+        assert(node instanceof LayerMap);
+      }
+    });
 
-  describe("has_ancestor", () => {});
+    it("should generate all nodes which are strict ancestors of a given key", () => {
+      const target = {
+        "": 31,
+        ".foo": undefined
+      };
+      assert.deepEqual(target, flatten(map._ancestor_nodes(["foo", "bar"])));
+    });
 
-  describe("get_ancestors", () => {});
+    it("should generate prefix nodes of a non-existent key", () => {
+      const target = {
+        "": 31,
+        ".foo": undefined,
+        ".foo.bar": null
+      };
+      assert.deepEqual(
+        target,
+        flatten(map._ancestor_nodes(["foo", "bar", "baz"]))
+      );
+    });
+  });
 
-  describe("delete_ancestors", () => {});
+  describe("has_ancestor", () => {
+    beforeEach(() => {
+      map.delete([]);
+    });
+
+    it("should return true when an ancestor value exists", () => {
+      const exists = [
+        ["foo", "bar", "baz"],
+        ["fah", "lah"],
+        ["fah", "lah", "lah"]
+      ];
+      for (const seq of exists) {
+        assert.isTrue(map.has_ancestor(seq));
+      }
+    });
+
+    it("should return false when an ancestor value does not exist", () => {
+      const not_exists = [["foo"], ["foo", "bar"], ["foo", "baz"], ["fah"], []];
+      for (const seq of not_exists) {
+        assert.isFalse(map.has_ancestor(seq));
+      }
+    });
+  });
+
+  describe("get_ancestors", () => {
+    it("should generate a list of ancestors in descending order", () => {
+      const key = ["foo", "bar", "baz"],
+        target = [[[], 31], [["foo", "bar"], null]];
+      assert.deepEqual(map.get_ancestors(key), target);
+    });
+
+    it("should generate only strict ancestors", () => {
+      const key = ["foo", "bar"],
+        target = [[[], 31]];
+      assert.deepEqual(map.get_ancestors(key), target);
+    });
+  });
+
+  describe("delete_ancestors", () => {
+    it("should delete ancestors of a given key sequence", () => {
+      const key = ["foo", "bar", "baz"],
+        target = {
+          ".fah": "a",
+          ".foo.baz": undefined
+        };
+      map.delete_ancestors(key);
+      assert.deepEqual(flatten(map), target);
+    });
+
+    it("should delete only strict ancestors", () => {
+      const key = ["foo", "bar"],
+        target = {
+          ".fah": "a",
+          ".foo.bar": null,
+          ".foo.baz": undefined
+        };
+      map.delete_ancestors(key);
+      assert.deepEqual(flatten(map), target);
+    });
+  });
 
   describe("_nodes", () => {
     it("should visit all nodes", () => {
@@ -428,29 +515,17 @@ describe("LayerMap", () => {
 
   describe("entries", () => {
     it("should generate each entry of the map", () => {
-      let record = {};
-      for (const [value, key] of map.entries()) {
-        record[stringify_key(key)] = value;
-      }
-      assert.deepEqual(record, flat_copy);
+      assert.deepEqual(flatten(map.entries()), flat_copy);
     });
 
     it("should generate the entries with a given prefix", () => {
-      let record = {};
-      for (const [value, key] of map.entries(submap_prefix)) {
-        record[stringify_key(key)] = value;
-      }
-      assert.deepEqual(record, submap_flat_copy);
+      assert.deepEqual(flatten(map.entries(submap_prefix)), submap_flat_copy);
     });
   });
 
   describe("iterator", () => {
     it("should generate each entry of the map", () => {
-      let record = {};
-      for (const [value, key] of map) {
-        record[stringify_key(key)] = value;
-      }
-      assert.deepEqual(record, flat_copy);
+      assert.deepEqual(flatten(map), flat_copy);
     });
   });
 

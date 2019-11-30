@@ -265,7 +265,7 @@ class LayerMap {
   /**
    * Return whether any values are stored in this LayerMap with keys prefixed
    * by the specified sequence of keys.
-   * @param  {[type]}  keys - The prefix of keys.
+   * @param  {Array}   keys - The prefix of keys.
    * @return {Boolean}      - Whether any values have keys prefixed by `keys`.
    */
   has_descendent(keys) {
@@ -356,7 +356,7 @@ class LayerMap {
     let ancestors = new Array();
     for (const node of this._ancestor_nodes(keys)) {
       if (node._has_value()) {
-        ancestors.push(new Array(node._get_value(), node._get_key_sequence()));
+        ancestors.push(new Array(node._get_key_sequence(), node._get_value()));
       }
     }
     return ancestors;
@@ -369,7 +369,7 @@ class LayerMap {
    * @return {Boolean}      - Whether any ancestors were deleted.
    */
   delete_ancestors(keys) {
-    if (this._has_ancestor(keys)) {
+    if (this.has_ancestor(keys)) {
       for (const node of this._ancestor_nodes(keys)) {
         node._delete_value();
       }
@@ -428,7 +428,7 @@ class LayerMap {
   *entries(prefix = null) {
     for (const node of this._nodes(prefix)) {
       if (node._has_value()) {
-        yield new Array(node._get_value(), node._get_key_sequence());
+        yield new Array(node._get_key_sequence(), node._get_value());
       }
     }
   }
@@ -453,7 +453,7 @@ class LayerMap {
    */
   forEach(callback, prefix = null, thisArg = null) {
     if (thisArg) callback = callback.bind(thisArg);
-    for (const [value, key] of this.entries(prefix)) {
+    for (const [key, value] of this.entries(prefix)) {
       callback(value, key, this);
     }
   }
@@ -465,7 +465,7 @@ class LayerMap {
    * @return {Generator}             - The generator.
    */
   *keys(prefix = null) {
-    for (const [value, key] of this.entries(prefix)) {
+    for (const [key] of this.entries(prefix)) {
       yield key;
     }
   }
@@ -476,7 +476,7 @@ class LayerMap {
    * @return {Generator}               - The generator.
    */
   *values(prefix = null) {
-    for (const [value, key] of this.entries(prefix)) {
+    for (const [, value] of this.entries(prefix)) {
       yield value;
     }
   }
