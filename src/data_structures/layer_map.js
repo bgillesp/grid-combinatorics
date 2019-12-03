@@ -434,6 +434,17 @@ class LayerMap {
   }
 
   /**
+   * Generate all of the entries of this LayerMap object which either are
+   * prefixed by, or are a prefix of, the given key sequence.
+   * @param  {Array}     keys - The sequence of keys
+   * @return {Generator}      - The generator for entries.
+   */
+  *neighborhood(keys) {
+    yield* this.get_ancestors(keys);
+    yield* this.entries(keys);
+  }
+
+  /**
    * The default generator for the LayerMap object.  This is an alias for
    * LayerMap.entries().
    */

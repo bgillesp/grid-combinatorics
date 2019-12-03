@@ -135,13 +135,7 @@ class DAG {
     let reindex_set = set => {
       for (let i = 0; i < this._n_verts; i++) {
         let arr = Array.from(set);
-        arr = _.map(arr, n => {
-          if (n < index) {
-            return n;
-          } else {
-            return n - 1;
-          }
-        });
+        arr = _.map(arr, n => (n < index ? n : n - 1));
         return new Set(arr);
       }
     };
@@ -444,7 +438,7 @@ class DAGTraversal {
    * @return {Array} - The available vertices.
    */
   available() {
-    let available = [];
+    let available = new Array();
     for (let i = 0; i < this._edges.length; i++) {
       if (this._edges[i].size == 0 && !this._visited.has(i)) {
         available.push(i);

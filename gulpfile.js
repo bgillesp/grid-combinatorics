@@ -80,7 +80,7 @@ function lint() {
 function test() {
   return gulp
     .src(config.paths.test, { read: false })
-    .pipe(mocha({ reporter: "spec" }))
+    .pipe(mocha({ reporter: "dot" }))
     .on("error", err => gulp.emit("end"));
 }
 

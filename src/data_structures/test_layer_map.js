@@ -523,6 +523,18 @@ describe("LayerMap", () => {
     });
   });
 
+  describe("neighborhood", () => {
+    it("should generate the entries in neighborhood", () => {
+      let key = ["foo"],
+        target = {
+          "": 31,
+          ".foo.bar": null,
+          ".foo.baz": undefined
+        };
+      assert.deepEqual(flatten(map.neighborhood(["foo"])), target);
+    });
+  });
+
   describe("iterator", () => {
     it("should generate each entry of the map", () => {
       assert.deepEqual(flatten(map), flat_copy);
