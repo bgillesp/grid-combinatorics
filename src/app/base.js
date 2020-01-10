@@ -9,39 +9,12 @@ const Grid = require("../grid.js").Grid;
 const Config = require("./config.js");
 const UndoQueue = require("../operations/undo_queue.js");
 const CreateBoxOperation = require("../operations/create_box.js");
+const MoveBoxOperation = require("../operations/move_box.js");
+const SimpleAnimationManager = require("../placeholder/simple_animation_manager.js");
+const DiagnosticsTool = require("../tools/diagnostics_tool.js");
+const MoveTool = require("../tools/move_tool.js");
 
 const Vector = Two.Vector;
-
-// add set_viewport function call to Two objects
-/**
- * Set the transform of a Two.js object to view a specified coordinate range.
- * Sets scaling so the entire specified range, plus a proportional border, is
- * visible with a 1:1 aspect ratio.
- * @param {Two} two             - Two.js renderer instance
- * @param {Number} x_min        - Viewport minimum x-coordinate.
- * @param {Number} x_max        - Viewport maximum x-coordinate.
- * @param {Number} y_min        - Viewport minimum y-coordinate.
- * @param {Number} y_max        - Viewport maximum y-coordinate.
- * @param {Number} [border=0.1] - Extra border size, specified as a proportion
- *                                of the smaller of the x- and y-dimensions
- */
-function setViewport(two, x_min, x_max, y_min, y_max, border = 0.1) {
-  // set transform to view specified coordinate range
-  // rescales to maintain 1:1 aspect ratio and include all of
-  //   requested domain; border added on each side, specified
-  //   as a proportion of the smaller dimension of the stage
-  var w = two.width;
-  var h = two.height;
-  var border_px = Math.min(w, h) * border;
-  var scale = Math.min(
-    (w - 2 * border_px) / (x_max - x_min),
-    (h - 2 * border_px) / (y_max - y_min)
-  );
-  var origin_x = scale * x_min - border_px;
-  var origin_y = scale * y_min - border_px;
-  two.scene.scale = scale;
-  two.scene.translation = new Vector(-origin_x, -origin_y);
-}
 
 var app = {};
 
@@ -50,11 +23,55 @@ app.display = display;
 
 var grid = new Grid(display, Config);
 app.grid = grid;
-grid.add(1, 1, "H");
-grid.remove(1, 1);
+
+var grid_overlay = $("#grid-display-overlay");
+var grid_display = $("#grid-display");
+
+// var $div = $("<div>", { id: "grid-display-overlay" });
+
+var grid_handler = new DiagnosticsTool(app);
+
+function grid_mousedown(e) {
+  console.log("mousedown");
+  grid_handler.on_mouse_down(e);
+}
+
+function grid_mousemove(e) {
+  grid_handler.on_mouse_move(e);
+}
+
+function grid_mouseup(e) {
+  grid_handler.on_mouse_up(e);
+  console.log("mouseup");
+}
+
+console.log(display);
+
+grid_display.on("mousedown", grid_mousedown);
+grid_display.on("mousemove", grid_mousemove);
+grid_display.on("mouseup", grid_mouseup);
 
 var init_queue = [];
 var undo_queue = new UndoQueue();
+
+function execute(op) {
+  op.execute(app);
+  undo_queue.push(op);
+}
+
+function undo() {
+  var op = undo_queue.pop_undo();
+  if (!_.isNull(op)) {
+    op.undo(app);
+  }
+}
+
+function redo() {
+  var op = undo_queue.pop_redo();
+  if (!_.isNull(op)) {
+    op.execute(app);
+  }
+}
 
 // Initialize application to nontrivial state
 
@@ -75,27 +92,30 @@ for (let i = 0; i < coords.length; i++) {
   let v = coords[i];
   let label = labels[i];
   let op = new CreateBoxOperation(v.x, v.y, label);
-  init_queue.push(op);
-}
-
-function execute(op) {
   op.execute(app);
-  undo_queue.push(op);
 }
 
-function undo() {
-  var op = undo_queue.pop_undo();
-  if (!_.isNull(op)) {
-    op.undo(app);
-  }
-}
+// Add movement operations to execute, undo, redo, etc.
 
-function redo() {
-  var op = undo_queue.pop_redo();
-  if (!_.isNull(op)) {
-    op.execute(app);
-  }
-}
+let moves = [
+  [new Vector(2, 0), new Vector(2, 1)],
+  [new Vector(1, 0), new Vector(2, 0)],
+  [new Vector(0, 0), new Vector(1, 0)],
+  [new Vector(0, 2), new Vector(1, 2)],
+  [new Vector(0, 1), new Vector(0, 2)],
+  [new Vector(1, 2), new Vector(2, 2)],
+  [new Vector(1, 1), new Vector(1, 2)],
+  [new Vector(1, 0), new Vector(1, 1)]
+];
+moves.reverse();
+
+moves.forEach(([old_coord, new_coord]) => {
+  let [{ x: old_x, y: old_y }, { x: new_x, y: new_y }] = [old_coord, new_coord];
+  let op = new MoveBoxOperation(old_x, old_y, new_x, new_y);
+  undo_queue.redo_queue.push(op);
+});
+
+let viewport_params = grid.set_viewport(0, 4, 0, 5);
 
 // function execute_from_queue(queue) {
 //   return e => {
@@ -141,8 +161,6 @@ button3.on("click", button3_onclick);
 //   };
 // }
 
-setViewport(grid.two, 0, 4, 0, 5);
-
 // function animate(time) {
 //   requestAnimationFrame(animate);
 //   Tween.update(time);
@@ -164,10 +182,15 @@ setViewport(grid.two, 0, 4, 0, 5);
 // anim1.start();
 ///////////// END TEST ANIMATION ///
 
+var animation_group = app.grid.get_animation_manager().get_tween_group();
 grid.two.bind("update", function(frameCount) {
   // This code is called everytime two.update() is called.
   // Effectively 60 times per second.
-  Tween.update();
+  animation_group.update();
+});
+
+grid.two.bind("onmousedown", function() {
+  console.log("mousedown");
 });
 
 // module.exports = app;

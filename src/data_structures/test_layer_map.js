@@ -2,6 +2,10 @@ const assert = require("chai").assert;
 
 const _ = require("underscore");
 const LayerMap = require("./layer_map.js");
+const Util = require("./util.js");
+
+const stringify_key = Util.layer_map.stringify_key;
+const flatten = Util.layer_map.flatten;
 
 describe("LayerMap", () => {
   var map, submap;
@@ -34,26 +38,6 @@ describe("LayerMap", () => {
       ".foo.bar": null,
       ".foo.baz": undefined
     };
-
-  function stringify_key(keys) {
-    return keys.reduce((aggr, str) => {
-      return aggr + "." + str;
-    }, "");
-  }
-
-  function flatten(gen) {
-    let record = new Object();
-    for (const val of gen) {
-      let key, value;
-      if (val instanceof LayerMap) {
-        [key, value] = [val._get_key_sequence(), val._get_value()];
-      } else {
-        [key, value] = val;
-      }
-      record[stringify_key(key)] = value;
-    }
-    return record;
-  }
 
   beforeEach(() => {
     map = new LayerMap();

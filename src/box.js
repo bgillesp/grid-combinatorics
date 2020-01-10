@@ -48,19 +48,12 @@ class Box {
     this.render = {
       loc: new Two.Vector(x, y),
       box: Box.makeBox(),
-      label: Box.makeLabel(label),
-      current_anim: null,
-      anim_queue: []
+      label: Box.makeLabel(label)
     };
     let grp = new Two.Group();
     grp.add(this.render.box, this.render.label);
     grp.translation = this.render.loc;
     this.render.main = grp;
-  }
-
-  pushAnimation(anim) {
-    if (this.render.current_anim === null) {
-    }
   }
 
   static makeBox() {

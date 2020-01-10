@@ -3,6 +3,9 @@ const Two = require("two.js");
 const Vector = Two.Vector;
 const GridArray = require("./data_structures/grid_array.js");
 const Box = require("./box.js").Box;
+const Tween = require("@tweenjs/tween.js");
+const SimpleAnimationManager = require("./placeholder/simple_animation_manager.js");
+const Viewport = require("./viewport.js");
 // const App = require("./app/app.js");
 
 /**
@@ -60,9 +63,12 @@ class Grid {
       autostart: true
     });
     this.two.appendTo(domParent);
-    // copy input Array of boxes
-    this.boxes = [];
+    this.viewport_params = {
+      scale: 1.0,
+      translation: new Two.Vector(0, 0)
+    };
     this.data = new GridData();
+    this.animation_manager = new SimpleAnimationManager();
   }
 
   add(x, y, label) {
@@ -77,13 +83,51 @@ class Grid {
     this.two.remove(box.render.main);
   }
 
-  // _click_log(
-
-  get(i) {
-    return this.boxes[i];
+  get(x, y) {
+    return this.data.get(x, y);
   }
 
-  move(x_start, y_start, x_end, y_end) {}
+  move(x_start, y_start, x_end, y_end) {
+    let box = this.get(x_start, y_start);
+    this._animate_motion(box, x_end, y_end);
+    this.data.move(x_start, y_start, x_end, y_end);
+    box.x = x_end;
+    box.y = y_end;
+  }
+
+  get_render_context() {
+    return this.two;
+  }
+
+  get_local_coordinates(x, y) {
+    let coord = new Two.Vector(x, y);
+    coord.subtractSelf(this.viewport_params.translation);
+    coord.multiplyScalar(1 / this.viewport_params.scale);
+    return coord;
+  }
+
+  set_viewport(x_min, x_max, y_min, y_max, border = 0.1) {
+    this.viewport_params = Viewport.set_viewport(
+      this.two,
+      x_min,
+      x_max,
+      y_min,
+      y_max,
+      border
+    );
+    return this.viewport_params;
+  }
+
+  get_animation_manager() {
+    return this.animation_manager;
+  }
+
+  _animate_motion(box, x, y) {
+    let anim = new Tween.Tween(box.render.main.translation)
+      .to({ x: x, y: y }, 200)
+      .easing(Tween.Easing.Quadratic.Out);
+    this.animation_manager.add(anim);
+  }
 }
 
 var T = {};

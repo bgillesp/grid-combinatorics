@@ -1,3 +1,5 @@
+const LayerMap = require("./layer_map.js");
+
 let Util = {
   /**
    * Shallow equality check for Array objects
@@ -21,6 +23,29 @@ let Util = {
     if (s1.size != s2.size) return false;
     for (let a of s1) if (!s1.has(a)) return false;
     return true;
+  },
+
+  layer_map: {
+    stringify_key: function(keys) {
+      return keys.reduce((aggr, str) => {
+        return aggr + "." + str;
+      }, "");
+    },
+
+    flatten: function(gen) {
+      let record = new Object();
+      const stringify_key = Util.layer_map.stringify_key;
+      for (const val of gen) {
+        let key, value;
+        if (val instanceof LayerMap) {
+          [key, value] = [val._get_key_sequence(), val._get_value()];
+        } else {
+          [key, value] = val;
+        }
+        record[stringify_key(key)] = value;
+      }
+      return record;
+    }
   }
 };
 

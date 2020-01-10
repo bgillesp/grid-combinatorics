@@ -1,32 +1,24 @@
 const Operation = require("./operation.js");
 
 class MoveBoxOperation extends Operation {
-  constructor(box, x, y) {
+  constructor(start_x, start_y, end_x, end_y) {
     super("move_box");
-    this.params.box = box;
-    this.params.x = x;
-    this.params.y = y;
-    this.memory.x = box.x;
-    this.memory.y = box.y;
+    this.params.x = end_x;
+    this.params.y = end_y;
+    this.memory.x = start_x;
+    this.memory.y = start_y;
   }
 
   execute(app) {
-    let box = this.params.box;
-    let x = this.params.x;
-    let y = this.params.y;
-    box.x = x;
-    box.y = y;
-    // TODO handle speed / timing
-    let anim = new Tween.Tween(box.render.group.translation)
-      .to({ x: x, y: y }, 1000)
-      .easing(Tween.Easing.Quadratic.Out);
-    if (box.render.anim.length > 0) {
-      box.render.anim[box.render.anim.length - 1];
-    }
+    let { x, y } = this.params;
+    let { x: old_x, y: old_y } = this.memory;
+    app.grid.move(old_x, old_y, x, y);
   }
 
   undo(app) {
-    // ...
+    let { x, y } = this.params;
+    let { x: old_x, y: old_y } = this.memory;
+    app.grid.move(x, y, old_x, old_y);
   }
 }
 
