@@ -16,13 +16,22 @@
     <section id="main">
       <fieldset>
         <legend>Tableau Display</legend>
-        <div id="grid-display">
-          <div id="grid-display-overlay"></div>
+        <div id="grid-overlay">
+          <div id="grid-display">
+          </div>
         </div>
       </fieldset>
-      <button type="button" id="input1">Action 1</button>
-      <button type="button" id="input2">Action 2</button>
-      <button type="button" id="input3">Action 3</button>
+      <p>
+        <button type="button" id="undo">Undo</button>
+        <button type="button" id="redo">Redo</button>
+      </p>
+      <p>
+        <input type="radio" name="tool" name="build_tool_radio" id="build_tool_radio" value="build">
+        <label for="build_tool_radio">Build Tool</label>
+        <br/>
+        <input type="radio" name="tool" name="move_tool_radio" id="move_tool_radio" value="move">
+        <label for="move_tool_radio">Move Tool</label>
+      </p>
     </section>
   </section>
   <!-- ========= -->

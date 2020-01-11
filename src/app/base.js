@@ -13,6 +13,7 @@ const MoveBoxOperation = require("../operations/move_box.js");
 const SimpleAnimationManager = require("../placeholder/simple_animation_manager.js");
 const DiagnosticsTool = require("../tools/diagnostics_tool.js");
 const MoveTool = require("../tools/move_tool.js");
+const BuildTool = require("../tools/build_tool.js");
 
 const Vector = Two.Vector;
 
@@ -24,15 +25,12 @@ app.display = display;
 var grid = new Grid(display, Config);
 app.grid = grid;
 
-var grid_overlay = $("#grid-display-overlay");
-var grid_display = $("#grid-display");
-
-// var $div = $("<div>", { id: "grid-display-overlay" });
-
-var grid_handler = new DiagnosticsTool(app);
+var grid_overlay = $("#grid-overlay");
+grid_overlay.on("contextmenu", () => {
+  return false;
+});
 
 function grid_mousedown(e) {
-  console.log("mousedown");
   grid_handler.on_mouse_down(e);
 }
 
@@ -42,22 +40,19 @@ function grid_mousemove(e) {
 
 function grid_mouseup(e) {
   grid_handler.on_mouse_up(e);
-  console.log("mouseup");
 }
 
-console.log(display);
+grid_overlay.on("mousedown", grid_mousedown);
+grid_overlay.on("mousemove", grid_mousemove);
+grid_overlay.on("mouseup", grid_mouseup);
 
-grid_display.on("mousedown", grid_mousedown);
-grid_display.on("mousemove", grid_mousemove);
-grid_display.on("mouseup", grid_mouseup);
-
-var init_queue = [];
 var undo_queue = new UndoQueue();
 
 function execute(op) {
   op.execute(app);
   undo_queue.push(op);
 }
+app.execute = execute;
 
 function undo() {
   var op = undo_queue.pop_undo();
@@ -65,6 +60,7 @@ function undo() {
     op.undo(app);
   }
 }
+app.undo = undo;
 
 function redo() {
   var op = undo_queue.pop_redo();
@@ -72,50 +68,79 @@ function redo() {
     op.execute(app);
   }
 }
+app.redo = redo;
 
 // Initialize application to nontrivial state
 
-let coords = [
-  new Vector(0, 0),
-  new Vector(1, 0),
-  new Vector(0, 1),
-  new Vector(1, 1),
-  new Vector(2, 0),
-  new Vector(3, 0),
-  new Vector(4, 0),
-  new Vector(0, 2),
-  new Vector(0, 3)
-];
-let labels = ["1", "2", "3", "4", "5", "6", "7", "8", "9"];
-
-for (let i = 0; i < coords.length; i++) {
-  let v = coords[i];
-  let label = labels[i];
-  let op = new CreateBoxOperation(v.x, v.y, label);
-  op.execute(app);
-}
+// let coords = [
+//   new Vector(0, 0),
+//   new Vector(1, 0),
+//   new Vector(0, 1),
+//   new Vector(1, 1),
+//   new Vector(2, 0),
+//   new Vector(3, 0),
+//   new Vector(4, 0),
+//   new Vector(0, 2),
+//   new Vector(0, 3)
+// ];
+// let labels = ["1", "2", "3", "4", "5", "6", "7", "8", "9"];
+//
+// let coords = [
+//   new Vector(0, 0),
+//   new Vector(0, 1),
+//   new Vector(0, 2),
+//   new Vector(0, 3),
+//   new Vector(0, 4),
+//   new Vector(0, 5),
+//   new Vector(0, 6),
+//   new Vector(0, 7),
+//   new Vector(1, 0),
+//   new Vector(1, 1),
+//   new Vector(1, 2),
+//   new Vector(1, 3),
+//   new Vector(1, 4),
+//   new Vector(1, 5),
+//   new Vector(1, 6),
+//   new Vector(1, 7),
+//   new Vector(2, 0),
+//   new Vector(2, 1),
+//   new Vector(2, 2),
+//   new Vector(2, 3),
+//   new Vector(2, 4),
+//   new Vector(2, 5),
+//   new Vector(2, 6),
+//   new Vector(2, 7)
+// ];
+//
+// for (let i = 0; i < coords.length; i++) {
+//   let v = coords[i];
+//   let label = "";
+//   let op = new CreateBoxOperation(v.x, v.y, label);
+//   execute(op);
+// }
 
 // Add movement operations to execute, undo, redo, etc.
-
-let moves = [
-  [new Vector(2, 0), new Vector(2, 1)],
-  [new Vector(1, 0), new Vector(2, 0)],
-  [new Vector(0, 0), new Vector(1, 0)],
-  [new Vector(0, 2), new Vector(1, 2)],
-  [new Vector(0, 1), new Vector(0, 2)],
-  [new Vector(1, 2), new Vector(2, 2)],
-  [new Vector(1, 1), new Vector(1, 2)],
-  [new Vector(1, 0), new Vector(1, 1)]
-];
-moves.reverse();
-
-moves.forEach(([old_coord, new_coord]) => {
-  let [{ x: old_x, y: old_y }, { x: new_x, y: new_y }] = [old_coord, new_coord];
-  let op = new MoveBoxOperation(old_x, old_y, new_x, new_y);
-  undo_queue.redo_queue.push(op);
-});
+//
+// let moves = [
+//   [new Vector(2, 0), new Vector(2, 1)],
+//   [new Vector(1, 0), new Vector(2, 0)],
+//   [new Vector(0, 0), new Vector(1, 0)],
+//   [new Vector(0, 2), new Vector(1, 2)],
+//   [new Vector(0, 1), new Vector(0, 2)],
+//   [new Vector(1, 2), new Vector(2, 2)],
+//   [new Vector(1, 1), new Vector(1, 2)],
+//   [new Vector(1, 0), new Vector(1, 1)]
+// ];
+// moves.reverse();
+//
+// moves.forEach(([old_coord, new_coord]) => {
+//   let [{ x: old_x, y: old_y }, { x: new_x, y: new_y }] = [old_coord, new_coord];
+//   let op = new MoveBoxOperation(old_x, old_y, new_x, new_y);
+//   undo_queue.redo_queue.push(op);
+// });
 
 let viewport_params = grid.set_viewport(0, 4, 0, 5);
+// grid.two.scene.scale *= -1;
 
 // function execute_from_queue(queue) {
 //   return e => {
@@ -127,26 +152,37 @@ let viewport_params = grid.set_viewport(0, 4, 0, 5);
 //   };
 // }
 
-function button1_onclick(e) {
-  if (init_queue.length > 0) {
-    var op = init_queue.pop();
-    execute(op);
-  }
-}
-function button2_onclick(e) {
+function undo_click(e) {
   undo();
 }
 
-function button3_onclick(e) {
+function redo_click(e) {
   redo();
 }
 
-let button1 = $("#input1");
-button1.on("click", button1_onclick);
-let button2 = $("#input2");
-button2.on("click", button2_onclick);
-let button3 = $("#input3");
-button3.on("click", button3_onclick);
+let undo_button = $("#undo");
+undo_button.on("click", undo_click);
+let redo_button = $("#redo");
+redo_button.on("click", redo_click);
+
+var move_tool = new MoveTool(app);
+var build_tool = new BuildTool(app);
+
+function select_build_tool(e) {
+  grid_handler = build_tool;
+}
+
+function select_move_tool(e) {
+  grid_handler = move_tool;
+}
+
+let build_tool_radio = $("#build_tool_radio");
+build_tool_radio.on("click", select_build_tool);
+let move_tool_radio = $("#move_tool_radio");
+move_tool_radio.on("click", select_move_tool);
+
+var grid_handler = build_tool;
+build_tool_radio[0].checked = true;
 
 // while (init_queue.length > 0) {
 //   var op = init_queue.pop();
@@ -187,10 +223,6 @@ grid.two.bind("update", function(frameCount) {
   // This code is called everytime two.update() is called.
   // Effectively 60 times per second.
   animation_group.update();
-});
-
-grid.two.bind("onmousedown", function() {
-  console.log("mousedown");
 });
 
 // module.exports = app;

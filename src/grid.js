@@ -6,7 +6,6 @@ const Box = require("./box.js").Box;
 const Tween = require("@tweenjs/tween.js");
 const SimpleAnimationManager = require("./placeholder/simple_animation_manager.js");
 const Viewport = require("./viewport.js");
-// const App = require("./app/app.js");
 
 /**
  * Wrapper class around GridArray to simplify operations needed for Tableau
@@ -60,8 +59,10 @@ class Grid {
     this.two = new Two({
       width: config.grid_size.width,
       height: config.grid_size.height,
-      autostart: true
+      autostart: true,
+      type: Two.Types.canvas
     });
+    this.two.add(this.make_axes());
     this.two.appendTo(domParent);
     this.viewport_params = {
       scale: 1.0,
@@ -71,16 +72,26 @@ class Grid {
     this.animation_manager = new SimpleAnimationManager();
   }
 
-  add(x, y, label) {
+  make_axes() {
+    let grp = new Two.Group(),
+      x_axis = new Two.Line(-100, -0.075, 100, -0.075),
+      y_axis = new Two.Line(-0.075, -100, -0.075, 100);
+    grp.add(x_axis, y_axis);
+    grp.linewidth = 0.05;
+    grp.stroke = "#ccc";
+    return grp;
+  }
+
+  add(x, y, label = "") {
     let box = new Box(x, y, label);
     this.data.add(x, y, box);
-    this.two.add(box.render.main);
+    this._animate_create(box);
   }
 
   remove(x, y) {
     let box = this.data.get(x, y);
     this.data.remove(x, y);
-    this.two.remove(box.render.main);
+    this._animate_remove(box);
   }
 
   get(x, y) {
@@ -89,8 +100,8 @@ class Grid {
 
   move(x_start, y_start, x_end, y_end) {
     let box = this.get(x_start, y_start);
-    this._animate_motion(box, x_end, y_end);
     this.data.move(x_start, y_start, x_end, y_end);
+    this._animate_move(box, x_end, y_end);
     box.x = x_end;
     box.y = y_end;
   }
@@ -122,10 +133,65 @@ class Grid {
     return this.animation_manager;
   }
 
-  _animate_motion(box, x, y) {
+  _animate_move(box, x, y) {
     let anim = new Tween.Tween(box.render.main.translation)
       .to({ x: x, y: y }, 200)
       .easing(Tween.Easing.Quadratic.Out);
+    this.animation_manager.add(anim);
+  }
+
+  _animate_create(box) {
+    const render = box.render.main;
+    render.opacity = 0.0;
+    render.scale = 0.0;
+    const params = {
+      scale: 0.0,
+      opacity: 0.0,
+      translate_x: box.x + 0.5,
+      translate_y: box.y + 0.5
+    };
+    const target_params = {
+      scale: 1.0,
+      opacity: 1.0,
+      translate_x: box.x,
+      translate_y: box.y
+    };
+    this.two.scene.add(render);
+    let anim = new Tween.Tween(params).to(target_params, 100).onUpdate(() => {
+      render.scale = params.scale;
+      render.opacity = params.opacity;
+      render.translation.x = params.translate_x;
+      render.translation.y = params.translate_y;
+    });
+    this.animation_manager.add(anim);
+  }
+
+  _animate_remove(box) {
+    const render = box.render.main;
+    const two = this.two;
+    const params = {
+      scale: 1.0,
+      opacity: 1.0,
+      translate_x: box.x,
+      translate_y: box.y
+    };
+    const target_params = {
+      scale: 0.0,
+      opacity: 0.0,
+      translate_x: box.x + 0.5,
+      translate_y: box.y + 0.5
+    };
+    let anim = new Tween.Tween(params)
+      .to(target_params, 100)
+      .onUpdate(() => {
+        render.scale = params.scale;
+        render.opacity = params.opacity;
+        render.translation.x = params.translate_x;
+        render.translation.y = params.translate_y;
+      })
+      .onComplete(() => {
+        two.remove(render);
+      });
     this.animation_manager.add(anim);
   }
 }

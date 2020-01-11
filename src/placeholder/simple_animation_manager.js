@@ -50,9 +50,17 @@ class SimpleAnimationManager {
 
   add(tween) {
     tween.group(this._tween_group);
-    tween.onComplete(() => {
-      this._tween_finished_callback();
-    });
+    if (tween._onCompleteCallback) {
+      let old_callback = tween._onCompleteCallback;
+      tween.onComplete(obj => {
+        old_callback(obj);
+        this._tween_finished_callback();
+      });
+    } else {
+      tween.onComplete(() => {
+        this._tween_finished_callback();
+      });
+    }
     this._queue.push(tween);
     this._step();
   }

@@ -2,6 +2,7 @@ const Two = require("two.js");
 
 function basicBox() {
   // box positioned at (0, 0)
+  // centered at (0.5, 0.5)
   // copy and translate to make other boxes
   let params = {
     strokeWidth: 0.075,
@@ -72,6 +73,8 @@ class Box {
     });
     return text;
   }
+
+  // TODO: operation to set label
 }
 
 var T = {};

@@ -9,13 +9,13 @@ class CreateBoxOperation extends Operation {
   }
 
   execute(app) {
-    let p = this.params;
-    app.grid.add(p.x, p.y, p.label);
+    const { x, y, label } = this.params;
+    app.grid.add(x, y, label);
   }
 
   undo(app) {
-    let p = this.params;
-    app.grid.remove(p.x, p.y);
+    const { x, y } = this.params;
+    app.grid.remove(x, y);
   }
 }
 
