@@ -17,8 +17,7 @@ function set_viewport(two, x_min, x_max, y_min, y_max, border = 0.1) {
   // rescales to maintain 1:1 aspect ratio and include all of
   //   requested domain; border added on each side, specified
   //   as a proportion of the smaller dimension of the stage
-  var w = two.width;
-  var h = two.height;
+  var { width: w, height: h } = two;
   var border_px = Math.min(w, h) * border;
   var scale = Math.min(
     (w - 2 * border_px) / (x_max - x_min),
@@ -29,7 +28,15 @@ function set_viewport(two, x_min, x_max, y_min, y_max, border = 0.1) {
   var translation = new Two.Vector(-origin_x, -origin_y);
   two.scene.scale = scale;
   two.scene.translation = translation;
+  // compute visible range of grid coordinates
+  var vis_x_width = (w - 2 * border_px) / scale;
+  var vis_y_width = (h - 2 * border_px) / scale;
+  console.log("vis width", vis_x_width, vis_y_width);
   return {
+    x_min: x_min,
+    x_max: Math.floor(x_min + vis_x_width),
+    y_min: y_min,
+    y_max: Math.floor(y_min + vis_y_width),
     scale: scale,
     translation: translation
   };

@@ -56,8 +56,7 @@ class MoveTool extends GridTool {
 
   on_mouse_down(e) {
     this._state.mouse_pressed = true;
-    const { x, y } = this.get_local_coords(e);
-    let box = this._grid.get(Math.floor(x), Math.floor(y));
+    const { box } = this.parse_mouse_event(e);
     if (box) {
       this._compute_available_regions(box.x, box.y);
     }
@@ -67,7 +66,7 @@ class MoveTool extends GridTool {
   on_mouse_move(e) {
     if (this._state.mouse_pressed && this._state.current_box) {
       let box = this._state.current_box;
-      const { x, y } = this.get_local_coords(e);
+      const { x, y } = this._get_local_coords(e);
       const [x_box, y_box] = [box.x, box.y];
       const [dx, dy] = [x - (x_box + 0.5), y - (y_box + 0.5)];
       // console.log("dx: ", dx, "dy: ", dy);
@@ -103,12 +102,16 @@ class MoveTool extends GridTool {
   }
 
   _compute_available_regions(x, y) {
+    const { x_min, x_max, y_min, y_max } = this._grid.viewport_params;
+    console.log("x_min, x_max, y_min, y_max:", x_min, x_max, y_min, y_max);
     let avail_regions = this._state.avail_regions;
     regions.forEach((region, index) => {
       const [x_offset, y_offset] = region.offset;
       avail_regions[index] =
-        x + x_offset >= 0 &&
-        y + y_offset >= 0 &&
+        x + x_offset >= x_min &&
+        y + y_offset >= y_min &&
+        x + x_offset < x_max &&
+        y + y_offset < y_max &&
         !this._grid.get(x + x_offset, y + y_offset);
     });
   }

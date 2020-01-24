@@ -41,6 +41,7 @@ function basicBox() {
 class Box {
   constructor(x, y, label = "") {
     // TODO check input coordinates are integers
+    label = String(label);
     this.x = x;
     this.y = y;
     this.label = label;
@@ -48,8 +49,8 @@ class Box {
     // TODO add tweening object for current animations
     this.render = {
       loc: new Two.Vector(x, y),
-      box: Box.makeBox(),
-      label: Box.makeLabel(label)
+      box: Box.make_box(),
+      label: Box.make_label(label)
     };
     let grp = new Two.Group();
     grp.add(this.render.box, this.render.label);
@@ -57,14 +58,24 @@ class Box {
     this.render.main = grp;
   }
 
-  static makeBox() {
+  set_label(label) {
+    label = String(label);
+    this.label = label;
+    let old_label = this.render.label,
+      new_label = Box.make_label(label);
+    this.render.main.remove(old_label);
+    this.render.main.add(new_label);
+    this.render.label = new_label;
+  }
+
+  static make_box() {
     // location set by separate group translation
     let box = basicBox();
     box.translation = new Two.Vector(0.5, 0.5);
     return box;
   }
 
-  static makeLabel(label) {
+  static make_label(label) {
     // location set by separate group translation
     var text = new Two.Text(label, 0.5, 0.435, {
       family: "proxima-nova, sans-serif",
@@ -77,6 +88,4 @@ class Box {
   // TODO: operation to set label
 }
 
-var T = {};
-T.Box = Box;
-module.exports = T;
+module.exports = Box;

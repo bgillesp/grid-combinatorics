@@ -2,7 +2,8 @@
 const Two = require("two.js");
 const Vector = Two.Vector;
 const GridArray = require("./data_structures/grid_array.js");
-const Box = require("./box.js").Box;
+const Box = require("./box.js");
+const Frame = require("./frame.js");
 const Tween = require("@tweenjs/tween.js");
 const SimpleAnimationManager = require("./placeholder/simple_animation_manager.js");
 const Viewport = require("./viewport.js");
@@ -70,16 +71,27 @@ class Grid {
     };
     this.data = new GridData();
     this.animation_manager = new SimpleAnimationManager();
+    this.highlight_frame = null;
   }
 
-  make_axes() {
-    let grp = new Two.Group(),
-      x_axis = new Two.Line(-100, -0.075, 100, -0.075),
-      y_axis = new Two.Line(-0.075, -100, -0.075, 100);
-    grp.add(x_axis, y_axis);
-    grp.linewidth = 0.05;
-    grp.stroke = "#ccc";
-    return grp;
+  make_axes(lower_left = false) {
+    if (lower_left) {
+      // var grp = new Two.Group(),
+      //   x_axis = new Two.Line(-100, -0.075, 100, -0.075),
+      //   y_axis = new Two.Line(-0.075, -100, -0.075, 100);
+      // grp.add(x_axis, y_axis);
+      // grp.linewidth = 0.05;
+      // grp.stroke = "#ccc";
+      // return grp;
+    } else {
+      var grp = new Two.Group(),
+        x_axis = new Two.Line(-100, -0.075, 100, -0.075),
+        y_axis = new Two.Line(-0.075, -100, -0.075, 100);
+      grp.add(x_axis, y_axis);
+      grp.linewidth = 0.05;
+      grp.stroke = "#ccc";
+      return grp;
+    }
   }
 
   add(x, y, label = "") {
@@ -104,6 +116,33 @@ class Grid {
     this._animate_move(box, x_end, y_end);
     box.x = x_end;
     box.y = y_end;
+  }
+
+  add_frame(x, y) {
+    this.remove_frame();
+    let frame = new Frame(x, y);
+    this._animate_add_frame(frame);
+    this.highlight_frame = frame;
+  }
+
+  remove_frame() {
+    if (this.highlight_frame) {
+      this._animate_remove_frame();
+      this.highlight_frame = null;
+    }
+  }
+
+  get_frame() {
+    return this.highlight_frame;
+  }
+
+  get_highlighted_box() {
+    let frame = this.get_frame();
+    if (frame) {
+      return this.data.get(frame.x, frame.y);
+    } else {
+      return null;
+    }
   }
 
   get_render_context() {
@@ -188,6 +227,50 @@ class Grid {
         render.opacity = params.opacity;
         render.translation.x = params.translate_x;
         render.translation.y = params.translate_y;
+      })
+      .onComplete(() => {
+        two.remove(render);
+      });
+    this.animation_manager.add(anim);
+  }
+
+  _animate_move_frame(x, y) {
+    const render = this.highlight_frame.render.main;
+    let anim = new Tween.Tween(render.translation)
+      .to({ x: x, y: y }, 200)
+      .easing(Tween.Easing.Quadratic.Out);
+    this.animation_manager.add(anim);
+  }
+
+  _animate_add_frame(frame) {
+    const render = frame.render.main;
+    render.opacity = 0.0;
+    const params = {
+      opacity: 0.0
+    };
+    const target_params = {
+      opacity: 1.0
+    };
+    this.two.scene.add(render);
+    let anim = new Tween.Tween(params).to(target_params, 75).onUpdate(() => {
+      render.opacity = params.opacity;
+    });
+    this.animation_manager.add(anim);
+  }
+
+  _animate_remove_frame() {
+    const render = this.highlight_frame.render.main;
+    const two = this.two;
+    const params = {
+      opacity: 1.0
+    };
+    const target_params = {
+      opacity: 0.0
+    };
+    let anim = new Tween.Tween(params)
+      .to(target_params, 75)
+      .onUpdate(() => {
+        render.opacity = params.opacity;
       })
       .onComplete(() => {
         two.remove(render);

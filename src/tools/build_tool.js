@@ -11,22 +11,17 @@ class BuildTool extends GridTool {
       delete_mode: false,
       edit_mode: false
     };
-  }
-
-  on_mouse_down(e) {
-    if (e.button == 0) {
-      if (this.has_box(e)) {
-        this._set_mode("edit");
-        // initialize edit mode
-      } else {
-        this._set_mode("create");
-        this.make_box(e);
+    this._keymanager = {
+      hotkeys: app.hotkeys,
+      scope: "build_tool"
+    };
+    this._keymanager.hotkeys(
+      "up,down,left,right,esc,backspace,0,1,2,3,4,5,6,7,8,9",
+      this._keymanager.scope,
+      (e, handler) => {
+        this.on_keypress(e, handler);
       }
-    } else if (e.button == 2) {
-      this._set_mode("delete");
-      this.delete_box(e);
-    }
-    this._state.mouse_pressed = true;
+    );
   }
 
   _set_mode(mode) {
@@ -34,6 +29,7 @@ class BuildTool extends GridTool {
     state.create_mode = false;
     state.delete_mode = false;
     state.edit_mode = false;
+    this.remove_frame(); // probably refactor this guy
     if (mode == "create") {
       state.create_mode = true;
     } else if (mode == "delete") {
@@ -41,6 +37,41 @@ class BuildTool extends GridTool {
     } else if (mode == "edit") {
       state.edit_mode = true;
     }
+  }
+
+  on_mouse_down(e) {
+    const { create_mode, delete_mode, edit_mode } = this._state;
+    const { x, y, box, frame } = this.parse_mouse_event(e);
+    if (e.button == 0) {
+      if (box) {
+        if (edit_mode) {
+          if (!(frame && frame.x == x && frame.y == y)) {
+            this.remove_frame();
+            this.make_frame(e);
+          }
+        } else {
+          this._set_mode("edit");
+          this.make_frame(e);
+          // only take keyboard input in edit mode
+          this._keymanager.hotkeys.setScope(this._keymanager.scope);
+        }
+      } else {
+        if (edit_mode) {
+          this._set_mode(null);
+        } else {
+          this._set_mode("create");
+          this.make_box(e);
+        }
+      }
+    } else if (e.button == 2) {
+      if (this._state.edit_mode) {
+        this._set_mode(null);
+      } else {
+        this._set_mode("delete");
+        this.delete_box(e);
+      }
+    }
+    this._state.mouse_pressed = true;
   }
 
   on_mouse_move(e) {
@@ -55,20 +86,68 @@ class BuildTool extends GridTool {
   }
 
   on_mouse_up(e) {
-    this._set_mode(null);
+    if (this._state.create_mode || this._state.delete_mode) {
+      this._set_mode(null);
+    }
     this._state.mouse_pressed = false;
   }
 
+  on_keypress(e, handler) {
+    e.preventDefault();
+    if (this._state.edit_mode) {
+      switch (handler.key) {
+        case "up":
+          console.log("You pressed up");
+          break;
+        case "down":
+          console.log("You pressed down");
+          break;
+        case "left":
+          console.log("You pressed left");
+          break;
+        case "right":
+          e.preventDefault();
+          console.log("You pressed right");
+          break;
+        case "esc":
+          // end edit mode
+          this.remove_frame(e);
+          this._keymanager.hotkeys.setScope("all");
+          console.log("Exiting edit mode");
+          break;
+        case "backspace":
+          var box = this._grid.get_highlighted_box();
+          if (box) {
+            var label = box.label;
+            if (label.length > 0) {
+              label = label.substring(0, label.length - 1);
+              box.set_label(label);
+            }
+          }
+          break;
+        default:
+          var box = this._grid.get_highlighted_box(),
+            val = String(handler.key);
+          if (box) {
+            var label = box.label;
+            if (label.length < 2) {
+              label += val;
+              box.set_label(label);
+            }
+          }
+          break;
+      }
+    }
+  }
+
   has_box(e) {
-    const loc = this.get_local_coords(e);
-    return !!this._grid.get(Math.floor(loc.x), Math.floor(loc.y));
+    const { box } = this.parse_mouse_event(e);
+    return !!box;
   }
 
   // make a box with no label at the location of e, if possible
   make_box(e) {
-    const loc = this.get_local_coords(e);
-    const [x, y] = [Math.floor(loc.x), Math.floor(loc.y)];
-    const box = this._grid.get(x, y);
+    const { x, y, box } = this.parse_mouse_event(e);
     if (!box) {
       let create_op = new CreateBoxOperation(x, y);
       this._app.execute(create_op);
@@ -76,13 +155,27 @@ class BuildTool extends GridTool {
   }
 
   delete_box(e) {
-    const loc = this.get_local_coords(e);
-    const [x, y] = [Math.floor(loc.x), Math.floor(loc.y)];
-    const box = this._grid.get(x, y);
+    const { x, y, box } = this.parse_mouse_event(e);
     if (box) {
       let delete_op = new DeleteBoxOperation(x, y);
       this._app.execute(delete_op);
     }
+  }
+
+  make_frame(e) {
+    const { x, y } = this.parse_mouse_event(e);
+    let frame = this.get_frame();
+    if (!frame || (frame.x != x || frame.y != y)) {
+      this._grid.add_frame(x, y);
+    }
+  }
+
+  remove_frame() {
+    this._grid.remove_frame();
+  }
+
+  get_frame() {
+    return this._grid.get_frame();
   }
 }
 

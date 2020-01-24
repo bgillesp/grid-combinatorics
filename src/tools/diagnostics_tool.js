@@ -16,14 +16,14 @@ class DiagnosticsTool extends GridTool {
 
   on_mouse_down(e) {
     this._state.mouse_pressed = true;
-    const loc = this.get_local_coords(e);
+    const loc = this._get_local_coords(e);
     this._circle.translation = loc;
     this._grid.get_render_context().add(this._circle);
   }
 
   on_mouse_move(e) {
     if (this._state.mouse_pressed) {
-      const loc = this.get_local_coords(e);
+      const loc = this._get_local_coords(e);
       this._circle.translation = loc;
     }
     // console.log(loc);
@@ -31,7 +31,7 @@ class DiagnosticsTool extends GridTool {
 
   on_mouse_up(e) {
     this._state.mouse_pressed = false;
-    const loc = this.get_local_coords(e);
+    const loc = this._get_local_coords(e);
     this._circle.translation = loc;
     this._grid.get_render_context().remove(this._circle);
   }

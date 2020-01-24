@@ -1,9 +1,11 @@
 const _ = require("underscore");
 const $ = require("jquery");
 const jQuery = $;
+const hotkeys = require("hotkeys-js");
 // const Backbone = require("backbone");
 // const BbLoc = require("backbone.localstorage");
 const Two = require("two.js");
+const Vector = Two.Vector;
 const Tween = require("@tweenjs/tween.js");
 const Grid = require("../grid.js").Grid;
 const Config = require("./config.js");
@@ -15,9 +17,11 @@ const DiagnosticsTool = require("../tools/diagnostics_tool.js");
 const MoveTool = require("../tools/move_tool.js");
 const BuildTool = require("../tools/build_tool.js");
 
-const Vector = Two.Vector;
-
 var app = {};
+app.hotkeys = hotkeys;
+// hotkeys("*", "scope", (e, handler) => {
+//   console.log("HOTKEYS WORKS");
+// });
 
 let display = $("#grid-display")[0];
 app.display = display;
