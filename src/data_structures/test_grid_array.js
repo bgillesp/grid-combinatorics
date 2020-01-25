@@ -17,9 +17,7 @@ describe("GridArray", () => {
       });
 
       it("should initialize to empty values", () => {
-        assert.isEmpty(ga.values);
-        assert.isEmpty(ga.indices.x);
-        assert.isEmpty(ga.indices.y);
+        assert.isEmpty(ga._values);
       });
 
       it("should have correct empty bounds", () => {
@@ -41,11 +39,11 @@ describe("GridArray", () => {
       });
 
       it("should create values coordinate object", () => {
-        assert.isObject(ga.values[x]);
+        assert.isObject(ga._values[x]);
       });
 
       it("should set a value", () => {
-        assert.equal(ga.values[x][y], val);
+        assert.equal(ga._values[x][y], val);
       });
 
       it("should set correct bounds", () => {

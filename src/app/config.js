@@ -10,8 +10,10 @@
 /**
  * Configuration parameters for application
  */
-var config = {};
-config.grid_size = { width: 960, height: 540 };
-// T.config.block = undefined;
+var config = {
+  canvas_size: { width: 800, height: 600 },
+  grid_size: { x_min: 0, x_max: 8, y_min: 0, y_max: 8 },
+  lower_left: true
+};
 
 module.exports = config;

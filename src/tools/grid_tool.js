@@ -4,6 +4,15 @@ class GridTool {
     this._grid = app.grid;
   }
 
+  enable() {}
+
+  disable() {}
+
+  reset() {
+    this.disable();
+    this.enable();
+  }
+
   _get_local_coords(e) {
     const { offsetX: x, offsetY: y } = e;
     return this._grid.get_local_coordinates(x - 1, y - 1);

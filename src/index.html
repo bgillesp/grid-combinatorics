@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Tableau Combinatorics App (Working Title)</title>
+  <title>Tableau Combinatorics Tool</title>
   <link rel="stylesheet" href="bundle.css"></link>
 </head>
 <body>
@@ -11,11 +11,11 @@
   <!-- ======== -->
   <section id="tableau-app">
     <header id="header">
-      <h1>Tableau App</h1>
+      <h1>Tableau Workspace</h1>
     </header>
     <section id="main">
-      <fieldset>
-        <legend>Tableau Display</legend>
+      <fieldset id="grid-wrapper">
+        <!-- <legend>Tableau Display</legend> -->
         <div id="grid-overlay">
           <div id="grid-display">
           </div>
@@ -24,6 +24,7 @@
       <p>
         <button type="button" id="undo">Undo</button>
         <button type="button" id="redo">Redo</button>
+        <button type="button" id="clear">Clear</button>
       </p>
       <p>
         <input type="radio" name="tool" name="build_tool_radio" id="build_tool_radio" value="build">

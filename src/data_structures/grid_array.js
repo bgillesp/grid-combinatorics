@@ -6,11 +6,11 @@ class GridArray {
    * Create an empty GridArray.
    */
   constructor() {
-    this.values = {};
-    this.indices = {
-      x: [],
-      y: []
-    };
+    this._init_data();
+  }
+
+  _init_data() {
+    this._values = new Object();
     this._bounds = {
       x_min: Infinity,
       y_min: Infinity,
@@ -18,6 +18,10 @@ class GridArray {
       y_max: -Infinity
     };
     this._bounds_dirty = false;
+  }
+
+  clear() {
+    this._init_data();
   }
 
   /**
@@ -28,10 +32,10 @@ class GridArray {
    */
   set(x, y, value) {
     GridArray._check_input_coords(x, y);
-    if (!(x in this.values)) {
-      this.values[x] = {};
+    if (!(x in this._values)) {
+      this._values[x] = {};
     }
-    this.values[x][y] = value;
+    this._values[x][y] = value;
     this._bounds = {
       x_min: Math.min(x, this._bounds.x_min),
       y_min: Math.min(y, this._bounds.y_min),
@@ -48,8 +52,12 @@ class GridArray {
    *                      no value is found.
    */
   get(x, y) {
-    if (this.has(x, y)) {
-      return this.values[x][y];
+    GridArray._check_input_coords(x, y);
+    return this._get(x, y);
+  }
+  _get(x, y) {
+    if (this._has(x, y)) {
+      return this._values[x][y];
     } else {
       return undefined;
     }
@@ -64,9 +72,9 @@ class GridArray {
    */
   remove(x, y) {
     if (this.has(x, y)) {
-      delete this.values[x][y];
-      if (_.isEmpty(this.values[x])) {
-        delete this.values[x];
+      delete this._values[x][y];
+      if (_.isEmpty(this._values[x])) {
+        delete this._values[x];
       }
       this._bounds_dirty = true;
       return true;
@@ -84,11 +92,10 @@ class GridArray {
    */
   has(x, y) {
     GridArray._check_input_coords(x, y);
-    if (!(x in this.values)) {
-      return false;
-    } else {
-      return y in this.values[x];
-    }
+    return this._has(x, y);
+  }
+  _has(x, y) {
+    return x in this._values && y in this._values[x];
   }
 
   /**
@@ -107,15 +114,45 @@ class GridArray {
     return bounds;
   }
 
+  column_bounds(x) {
+    var y_coords = [];
+    if (x in this._values.keys()) {
+      for (const y of this._values[x].keys()) {
+        y_coords.push(y);
+      }
+    }
+    return [Math.min(...y_coords), Math.max(...y_coords)];
+  }
+
+  row_bounds(y) {
+    var x_coords = [];
+    for (const x of this._values.keys()) {
+      if (this._has(x, y)) x_coords.push(x);
+    }
+    return [Math.min(...x_coords), Math.max(...x_coords)];
+  }
+
+  // TODO test
+  *values() {
+    const { x_min, x_max, y_min, y_max } = this._bounds;
+    for (let y = y_min; y <= y_max; ++y) {
+      for (let x = x_min; x <= x_max; ++x) {
+        if (this._has(x, y)) {
+          yield this._get(x, y);
+        }
+      }
+    }
+  }
+
   /**
    * Recomputes bounding box of GridArray object from scratch.
    */
   _compute_bounds() {
     var x_coords = [];
     var y_coords = [];
-    for (let x in this.values) {
+    for (let x in this._values) {
       x_coords.push(x);
-      for (let y in this.values[x]) {
+      for (let y in this._values[x]) {
         y_coords.push(y);
       }
     }

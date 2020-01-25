@@ -1,6 +1,30 @@
 const GridTool = require("./grid_tool.js");
 const CreateBoxOperation = require("../operations/create_box.js");
 const DeleteBoxOperation = require("../operations/delete_box.js");
+const SetBoxLabelOperation = require("../operations/set_box_label.js");
+
+const edit_mode_hotkeys = [
+  "up",
+  "down",
+  "left",
+  "right",
+  "tab",
+  "shift+tab",
+  "enter",
+  "space",
+  "esc",
+  "backspace",
+  "0",
+  "1",
+  "2",
+  "3",
+  "4",
+  "5",
+  "6",
+  "7",
+  "8",
+  "9"
+];
 
 class BuildTool extends GridTool {
   constructor(app) {
@@ -16,7 +40,7 @@ class BuildTool extends GridTool {
       scope: "build_tool"
     };
     this._keymanager.hotkeys(
-      "up,down,left,right,esc,backspace,0,1,2,3,4,5,6,7,8,9",
+      "up,down,left,right,tab,shift+tab,enter,space,esc,backspace,0,1,2,3,4,5,6,7,8,9",
       this._keymanager.scope,
       (e, handler) => {
         this.on_keypress(e, handler);
@@ -24,62 +48,112 @@ class BuildTool extends GridTool {
     );
   }
 
+  enable() {
+    super.enable();
+  }
+
+  disable() {
+    super.disable();
+    this._set_mode(null);
+    // this._keymanager.hotkeys.setScope("all");
+  }
+
   _set_mode(mode) {
     const state = this._state;
-    state.create_mode = false;
-    state.delete_mode = false;
-    state.edit_mode = false;
-    this.remove_frame(); // probably refactor this guy
-    if (mode == "create") {
-      state.create_mode = true;
-    } else if (mode == "delete") {
-      state.delete_mode = true;
-    } else if (mode == "edit") {
-      state.edit_mode = true;
+    switch (mode) {
+      case "create":
+        state.create_mode = true;
+        state.delete_mode = false;
+        state.edit_mode = false;
+        this._grid.remove_frame();
+        this._keymanager.hotkeys.setScope("all");
+        break;
+      case "delete":
+        state.create_mode = false;
+        state.delete_mode = true;
+        state.edit_mode = false;
+        this._grid.remove_frame();
+        this._keymanager.hotkeys.setScope("all");
+        break;
+      case "edit":
+        state.create_mode = false;
+        state.delete_mode = false;
+        state.edit_mode = true;
+        this._grid.remove_frame();
+        this._keymanager.hotkeys.setScope(this._keymanager.scope);
+        break;
+      default:
+        state.create_mode = false;
+        state.delete_mode = false;
+        state.edit_mode = false;
+        this._grid.remove_frame();
+        this._keymanager.hotkeys.setScope("all");
+        break;
     }
   }
 
   on_mouse_down(e) {
-    const { create_mode, delete_mode, edit_mode } = this._state;
     const { x, y, box, frame } = this.parse_mouse_event(e);
+    const { create_mode, delete_mode, edit_mode } = this._state;
     if (e.button == 0) {
-      if (box) {
-        if (edit_mode) {
-          if (!(frame && frame.x == x && frame.y == y)) {
-            this.remove_frame();
-            this.make_frame(e);
+      // left click
+      if (e.ctrlKey) {
+        if (this._grid.grid_coords_visible(x, y)) {
+          if (edit_mode) {
+            if (!(frame && frame.x == x && frame.y == y)) {
+              this._grid.remove_frame();
+              this._grid.add_frame(x, y);
+            }
+          } else {
+            this._set_mode("edit");
+            this._grid.add_frame(x, y);
           }
-        } else {
-          this._set_mode("edit");
-          this.make_frame(e);
-          // only take keyboard input in edit mode
-          this._keymanager.hotkeys.setScope(this._keymanager.scope);
         }
       } else {
-        if (edit_mode) {
-          this._set_mode(null);
+        if (box) {
+          if (edit_mode) {
+            if (!(frame && frame.x == x && frame.y == y)) {
+              this._grid.remove_frame();
+              this._grid.add_frame(x, y);
+            }
+          } else {
+            this._set_mode("edit");
+            this._grid.add_frame(x, y);
+          }
         } else {
-          this._set_mode("create");
-          this.make_box(e);
+          if (edit_mode) {
+            this._set_mode(null);
+          } else {
+            this._set_mode("create");
+            if (this._grid.grid_coords_visible(x, y)) {
+              this.make_box(x, y);
+            }
+          }
         }
       }
     } else if (e.button == 2) {
+      // right click
       if (this._state.edit_mode) {
         this._set_mode(null);
       } else {
         this._set_mode("delete");
-        this.delete_box(e);
+        if (box) this.delete_box(x, y);
       }
     }
     this._state.mouse_pressed = true;
   }
 
   on_mouse_move(e) {
+    const { x, y, box } = this.parse_mouse_event(e);
     if (this._state.mouse_pressed) {
       if (this._state.create_mode) {
-        this.make_box(e);
+        if (this._grid.grid_coords_visible(x, y) && !box) {
+          this.make_box(x, y);
+        }
       } else if (this._state.delete_mode) {
-        this.delete_box(e);
+        if (box) {
+          this.delete_box(x, y);
+        }
       } else if (this._state.edit_mode) {
       }
     }
@@ -93,89 +167,109 @@ class BuildTool extends GridTool {
   }
 
   on_keypress(e, handler) {
-    e.preventDefault();
+    // (only takes keyboard input in edit mode)
     if (this._state.edit_mode) {
-      switch (handler.key) {
+      e.preventDefault();
+      const params = this.parse_mouse_event(e);
+      const key = String(handler.key),
+        frame = this._grid.get_frame(),
+        x = frame.x,
+        y = frame.y;
+      let box = this._grid.get_highlighted_box();
+      switch (key) {
         case "up":
-          console.log("You pressed up");
+          if (this._grid.grid_coords_visible(x, y - 1)) {
+            this._grid.move_frame(x, y - 1);
+          }
           break;
         case "down":
-          console.log("You pressed down");
+          if (this._grid.grid_coords_visible(x, y + 1)) {
+            this._grid.move_frame(x, y + 1);
+          }
           break;
         case "left":
-          console.log("You pressed left");
+          if (this._grid.grid_coords_visible(x - 1, y)) {
+            this._grid.move_frame(x - 1, y);
+          }
           break;
         case "right":
-          e.preventDefault();
-          console.log("You pressed right");
+          if (this._grid.grid_coords_visible(x + 1, y)) {
+            this._grid.move_frame(x + 1, y);
+          }
+          break;
+        case "tab":
+          console.log("You pressed tab");
+          break;
+        case "shift+tab":
+          console.log("You pressed shift+tab");
+          break;
+        case "enter":
+        case "space":
+          if (!box && this._grid.grid_coords_visible(x, y)) {
+            this.make_box(x, y);
+          }
           break;
         case "esc":
           // end edit mode
-          this.remove_frame(e);
+          this._grid.remove_frame();
           this._keymanager.hotkeys.setScope("all");
-          console.log("Exiting edit mode");
           break;
         case "backspace":
-          var box = this._grid.get_highlighted_box();
           if (box) {
             var label = box.label;
             if (label.length > 0) {
               label = label.substring(0, label.length - 1);
-              box.set_label(label);
+              this.set_label(x, y, label);
+            } else {
+              this.delete_box(x, y);
             }
           }
           break;
         default:
-          var box = this._grid.get_highlighted_box(),
-            val = String(handler.key);
-          if (box) {
-            var label = box.label;
-            if (label.length < 2) {
-              label += val;
-              box.set_label(label);
-            }
+          if (!box && this._grid.grid_coords_visible(x, y)) {
+            this.make_box(x, y);
+            box = this._grid.get(x, y);
+          }
+          var label = box.label;
+          if (label.length < 2) {
+            label += key;
+            this.set_label(x, y, label);
           }
           break;
       }
     }
   }
 
-  has_box(e) {
-    const { box } = this.parse_mouse_event(e);
-    return !!box;
+  // make a box at the specified location
+  make_box(x, y, label = "") {
+    let create_op = new CreateBoxOperation(x, y, label);
+    this._app.execute(create_op);
   }
 
-  // make a box with no label at the location of e, if possible
-  make_box(e) {
-    const { x, y, box } = this.parse_mouse_event(e);
-    if (!box) {
-      let create_op = new CreateBoxOperation(x, y);
-      this._app.execute(create_op);
-    }
+  // delete the box at the specified location
+  delete_box(x, y) {
+    let delete_op = new DeleteBoxOperation(x, y);
+    this._app.execute(delete_op);
   }
 
-  delete_box(e) {
-    const { x, y, box } = this.parse_mouse_event(e);
-    if (box) {
-      let delete_op = new DeleteBoxOperation(x, y);
-      this._app.execute(delete_op);
-    }
+  // TODO good simple place to implement operation aggregation
+  set_label(x, y, label) {
+    let set_label = new SetBoxLabelOperation(x, y, label);
+    this._app.execute(set_label);
   }
 
-  make_frame(e) {
-    const { x, y } = this.parse_mouse_event(e);
-    let frame = this.get_frame();
+  make_frame(x, y) {
+    let frame = this._grid.get_frame();
     if (!frame || (frame.x != x || frame.y != y)) {
       this._grid.add_frame(x, y);
     }
   }
 
-  remove_frame() {
-    this._grid.remove_frame();
-  }
-
-  get_frame() {
-    return this._grid.get_frame();
+  move_frame(x, y) {
+    let frame = this._grid.get_frame();
+    if (frame) {
+      this._grid.move_frame(x, y);
+    }
   }
 }
 

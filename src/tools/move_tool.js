@@ -54,6 +54,12 @@ class MoveTool extends GridTool {
     };
   }
 
+  disable() {
+    this._state.mouse_pressed = false;
+    this._state.current_box = null;
+    this._state.avail_regions = new Array();
+  }
+
   on_mouse_down(e) {
     this._state.mouse_pressed = true;
     const { box } = this.parse_mouse_event(e);
@@ -103,15 +109,11 @@ class MoveTool extends GridTool {
 
   _compute_available_regions(x, y) {
     const { x_min, x_max, y_min, y_max } = this._grid.viewport_params;
-    console.log("x_min, x_max, y_min, y_max:", x_min, x_max, y_min, y_max);
     let avail_regions = this._state.avail_regions;
     regions.forEach((region, index) => {
       const [x_offset, y_offset] = region.offset;
       avail_regions[index] =
-        x + x_offset >= x_min &&
-        y + y_offset >= y_min &&
-        x + x_offset < x_max &&
-        y + y_offset < y_max &&
+        this._grid.grid_coords_visible(x + x_offset, y + y_offset) &&
         !this._grid.get(x + x_offset, y + y_offset);
     });
   }

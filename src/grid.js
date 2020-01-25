@@ -56,42 +56,68 @@ class GridData extends GridArray {
  */
 class Grid {
   constructor(domParent, config) {
+    this.config = config;
+    const {
+      canvas_size: { width: canvas_width, height: canvas_height },
+      grid_size: { x_min, x_max, y_min, y_max },
+      lower_left = false
+    } = config;
     this.parent = domParent;
     this.two = new Two({
-      width: config.grid_size.width,
-      height: config.grid_size.height,
+      width: canvas_width,
+      height: canvas_height,
       autostart: true,
       type: Two.Types.canvas
     });
-    this.two.add(this.make_axes());
     this.two.appendTo(domParent);
-    this.viewport_params = {
-      scale: 1.0,
-      translation: new Two.Vector(0, 0)
-    };
+    // currently can't change grid size
+    this.set_viewport(x_min, x_max, y_min, y_max, 0.1, lower_left);
+    this.two.add(this.make_axes(lower_left));
     this.data = new GridData();
     this.animation_manager = new SimpleAnimationManager();
     this.highlight_frame = null;
   }
 
   make_axes(lower_left = false) {
+    let grp = new Two.Group();
+    const { x_min, x_max, y_min, y_max } = this.viewport_params;
+    var x_axis, y_axis, origin_x, origin_y;
+    console.log("grid bounds:", x_min, x_max, y_min, y_max);
     if (lower_left) {
-      // var grp = new Two.Group(),
-      //   x_axis = new Two.Line(-100, -0.075, 100, -0.075),
-      //   y_axis = new Two.Line(-0.075, -100, -0.075, 100);
-      // grp.add(x_axis, y_axis);
-      // grp.linewidth = 0.05;
-      // grp.stroke = "#ccc";
-      // return grp;
+      origin_x = x_min - 0.075;
+      origin_y = y_max + 0.075;
+      x_axis = new Two.Line(-100, y_max + 0.075, 100, y_max + 0.075);
+      y_axis = new Two.Line(x_min - 0.075, -100, x_min - 0.075, 100);
     } else {
-      var grp = new Two.Group(),
-        x_axis = new Two.Line(-100, -0.075, 100, -0.075),
-        y_axis = new Two.Line(-0.075, -100, -0.075, 100);
-      grp.add(x_axis, y_axis);
-      grp.linewidth = 0.05;
-      grp.stroke = "#ccc";
-      return grp;
+      origin_x = x_min - 0.075;
+      origin_y = y_min - 0.075;
+      x_axis = new Two.Line(-100, y_min - 0.075, 100, y_min - 0.075);
+      y_axis = new Two.Line(x_min - 0.075, -100, x_min - 0.075, 100);
     }
+    x_axis.linewidth = 0.05;
+    y_axis.linewidth = 0.05;
+    grp.add(x_axis, y_axis);
+    var y_tick_min, y_tick_max;
+    if (lower_left) {
+      y_tick_min = y_min;
+      y_tick_max = y_max;
+    } else {
+      y_tick_min = y_min + 1;
+      y_tick_max = y_max + 1;
+    }
+    var tick;
+    for (let x = x_min + 1; x < x_max + 1; ++x) {
+      tick = new Two.Line(x, origin_y - 0.1, x, origin_y + 0.1);
+      tick.linewidth = 0.03;
+      grp.add(tick);
+    }
+    for (let y = y_tick_min; y < y_tick_max; ++y) {
+      tick = new Two.Line(origin_x - 0.1, y, origin_x + 0.1, y);
+      tick.linewidth = 0.03;
+      grp.add(tick);
+    }
+    grp.stroke = "#ccc";
+    return grp;
   }
 
   add(x, y, label = "") {
@@ -100,10 +126,34 @@ class Grid {
     this._animate_create(box);
   }
 
+  bulk_add(values) {
+    let boxes = [];
+    values.forEach(val => {
+      var { x, y, label } = val;
+      var box = new Box(x, y, label);
+      boxes.push(box);
+      this.data.add(x, y, box);
+    });
+    this._animate_bulk_create(boxes);
+  }
+
   remove(x, y) {
     let box = this.data.get(x, y);
     this.data.remove(x, y);
     this._animate_remove(box);
+  }
+
+  bulk_remove(values) {
+    let boxes = [];
+    values.forEach(val => {
+      var { x, y } = val;
+      var box = this.data.get(x, y);
+      this.data.remove(x, y);
+      if (box) {
+        boxes.push(box);
+      }
+    });
+    this._animate_bulk_remove(boxes);
   }
 
   get(x, y) {
@@ -113,7 +163,7 @@ class Grid {
   move(x_start, y_start, x_end, y_end) {
     let box = this.get(x_start, y_start);
     this.data.move(x_start, y_start, x_end, y_end);
-    this._animate_move(box, x_end, y_end);
+    this._animate_move(box.render.main, x_end, y_end);
     box.x = x_end;
     box.y = y_end;
   }
@@ -136,6 +186,15 @@ class Grid {
     return this.highlight_frame;
   }
 
+  move_frame(end_x, end_y) {
+    if (this.highlight_frame) {
+      let frame = this.highlight_frame;
+      this._animate_move(frame.render.main, end_x, end_y);
+      frame.x = end_x;
+      frame.y = end_y;
+    }
+  }
+
   get_highlighted_box() {
     let frame = this.get_frame();
     if (frame) {
@@ -156,6 +215,19 @@ class Grid {
     return coord;
   }
 
+  grid_coords_visible(x, y) {
+    const { x_min, x_max, y_min, y_max } = this.viewport_params;
+    return x >= x_min && x < x_max && y >= y_min && y < y_max;
+    // if (this.config.lower_left) {
+    //
+    // } else {
+    //
+    // }
+    //
+    // // console.log(x_min, x_max, y_min, y_max, x, y);
+    // return x >= x_min && x < x_max && y >= y_min && y < y_max;
+  }
+
   set_viewport(x_min, x_max, y_min, y_max, border = 0.1) {
     this.viewport_params = Viewport.set_viewport(
       this.two,
@@ -165,6 +237,7 @@ class Grid {
       y_max,
       border
     );
+    console.log(this.viewport_params);
     return this.viewport_params;
   }
 
@@ -172,110 +245,92 @@ class Grid {
     return this.animation_manager;
   }
 
-  _animate_move(box, x, y) {
-    let anim = new Tween.Tween(box.render.main.translation)
-      .to({ x: x, y: y }, 200)
-      .easing(Tween.Easing.Quadratic.Out);
+  _animate_move(render, x, y, params = {}) {
+    const { duration = 200, easing = Tween.Easing.Quadratic.Out } = params;
+    let anim = new Tween.Tween(render.translation)
+      .to({ x: x, y: y }, duration)
+      .easing(easing);
     this.animation_manager.add(anim);
   }
 
   _animate_create(box) {
-    const render = box.render.main;
-    render.opacity = 0.0;
-    render.scale = 0.0;
+    this._animate_bulk_create([box]);
+  }
+
+  _animate_bulk_create(boxes) {
+    boxes.forEach(b => {
+      b.render.main.opacity = 0.0;
+      b.render.main.scale = 0.0;
+      this.two.scene.add(b.render.main);
+    });
     const params = {
       scale: 0.0,
       opacity: 0.0,
-      translate_x: box.x + 0.5,
-      translate_y: box.y + 0.5
+      translate_x: 0.5,
+      translate_y: 0.5
     };
     const target_params = {
       scale: 1.0,
       opacity: 1.0,
-      translate_x: box.x,
-      translate_y: box.y
+      translate_x: 0.0,
+      translate_y: 0.0
     };
-    this.two.scene.add(render);
     let anim = new Tween.Tween(params).to(target_params, 100).onUpdate(() => {
-      render.scale = params.scale;
-      render.opacity = params.opacity;
-      render.translation.x = params.translate_x;
-      render.translation.y = params.translate_y;
+      boxes.forEach(b => {
+        var render = b.render.main;
+        render.scale = params.scale;
+        render.opacity = params.opacity;
+        render.translation.x = b.x + params.translate_x;
+        render.translation.y = b.y + params.translate_y;
+      });
     });
     this.animation_manager.add(anim);
   }
 
   _animate_remove(box) {
-    const render = box.render.main;
-    const two = this.two;
+    this._animate_bulk_remove([box]);
+  }
+
+  _animate_bulk_remove(boxes) {
     const params = {
       scale: 1.0,
       opacity: 1.0,
-      translate_x: box.x,
-      translate_y: box.y
+      translate_x: 0.0,
+      translate_y: 0.0
     };
     const target_params = {
       scale: 0.0,
       opacity: 0.0,
-      translate_x: box.x + 0.5,
-      translate_y: box.y + 0.5
+      translate_x: 0.5,
+      translate_y: 0.5
     };
     let anim = new Tween.Tween(params)
       .to(target_params, 100)
       .onUpdate(() => {
-        render.scale = params.scale;
-        render.opacity = params.opacity;
-        render.translation.x = params.translate_x;
-        render.translation.y = params.translate_y;
+        boxes.forEach(b => {
+          var render = b.render.main;
+          render.scale = params.scale;
+          render.opacity = params.opacity;
+          render.translation.x = b.x + params.translate_x;
+          render.translation.y = b.y + params.translate_y;
+        });
       })
       .onComplete(() => {
-        two.remove(render);
+        boxes.forEach(b => {
+          this.two.remove(b.render.main);
+        });
       });
-    this.animation_manager.add(anim);
-  }
-
-  _animate_move_frame(x, y) {
-    const render = this.highlight_frame.render.main;
-    let anim = new Tween.Tween(render.translation)
-      .to({ x: x, y: y }, 200)
-      .easing(Tween.Easing.Quadratic.Out);
     this.animation_manager.add(anim);
   }
 
   _animate_add_frame(frame) {
     const render = frame.render.main;
-    render.opacity = 0.0;
-    const params = {
-      opacity: 0.0
-    };
-    const target_params = {
-      opacity: 1.0
-    };
     this.two.scene.add(render);
-    let anim = new Tween.Tween(params).to(target_params, 75).onUpdate(() => {
-      render.opacity = params.opacity;
-    });
-    this.animation_manager.add(anim);
   }
 
   _animate_remove_frame() {
     const render = this.highlight_frame.render.main;
-    const two = this.two;
-    const params = {
-      opacity: 1.0
-    };
-    const target_params = {
-      opacity: 0.0
-    };
-    let anim = new Tween.Tween(params)
-      .to(target_params, 75)
-      .onUpdate(() => {
-        render.opacity = params.opacity;
-      })
-      .onComplete(() => {
-        two.remove(render);
-      });
-    this.animation_manager.add(anim);
+    this.two.remove(render);
   }
 }
 

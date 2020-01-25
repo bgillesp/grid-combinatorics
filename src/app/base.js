@@ -12,6 +12,7 @@ const Config = require("./config.js");
 const UndoQueue = require("../operations/undo_queue.js");
 const CreateBoxOperation = require("../operations/create_box.js");
 const MoveBoxOperation = require("../operations/move_box.js");
+const ClearGridOperation = require("../operations/clear_grid.js");
 const SimpleAnimationManager = require("../placeholder/simple_animation_manager.js");
 const DiagnosticsTool = require("../tools/diagnostics_tool.js");
 const MoveTool = require("../tools/move_tool.js");
@@ -26,13 +27,15 @@ app.hotkeys = hotkeys;
 let display = $("#grid-display")[0];
 app.display = display;
 
-var grid = new Grid(display, Config);
+let grid = new Grid(display, Config);
 app.grid = grid;
 
-var grid_overlay = $("#grid-overlay");
+let grid_overlay = $("#grid-overlay");
 grid_overlay.on("contextmenu", () => {
   return false;
 });
+
+let grid_handler = null;
 
 function grid_mousedown(e) {
   grid_handler.on_mouse_down(e);
@@ -143,7 +146,6 @@ app.redo = redo;
 //   undo_queue.redo_queue.push(op);
 // });
 
-let viewport_params = grid.set_viewport(0, 4, 0, 5);
 // grid.two.scene.scale *= -1;
 
 // function execute_from_queue(queue) {
@@ -164,20 +166,38 @@ function redo_click(e) {
   redo();
 }
 
+function clear_click(e) {
+  reset_tool();
+  let clear_grid = new ClearGridOperation();
+  execute(clear_grid);
+}
+
 let undo_button = $("#undo");
 undo_button.on("click", undo_click);
 let redo_button = $("#redo");
 redo_button.on("click", redo_click);
+let clear_button = $("#clear");
+clear_button.on("click", clear_click);
 
 var move_tool = new MoveTool(app);
 var build_tool = new BuildTool(app);
 
+function reset_tool() {
+  if (grid_handler) grid_handler.reset();
+}
+
+function select_tool(tool) {
+  if (grid_handler) grid_handler.disable();
+  if (tool) tool.enable();
+  grid_handler = tool;
+}
+
 function select_build_tool(e) {
-  grid_handler = build_tool;
+  select_tool(build_tool);
 }
 
 function select_move_tool(e) {
-  grid_handler = move_tool;
+  select_tool(move_tool);
 }
 
 let build_tool_radio = $("#build_tool_radio");
@@ -185,7 +205,7 @@ build_tool_radio.on("click", select_build_tool);
 let move_tool_radio = $("#move_tool_radio");
 move_tool_radio.on("click", select_move_tool);
 
-var grid_handler = build_tool;
+select_tool(build_tool);
 build_tool_radio[0].checked = true;
 
 // while (init_queue.length > 0) {

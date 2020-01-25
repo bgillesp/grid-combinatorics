@@ -16,9 +16,14 @@ $fontsize: 18px;
 }
 
 body {
+  padding-left: 50px;
   background-color: $bgcolor;
   color: $textcolor;
   font-size: $fontsize;
+}
+
+#grid-wrapper {
+  display: inline;
 }
 
 #grid-display {
