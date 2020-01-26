@@ -98,6 +98,7 @@ class BuildTool extends GridTool {
     if (e.button == 0) {
       // left click
       if (e.ctrlKey) {
+        // ctrl
         if (this._grid.grid_coords_visible(x, y)) {
           if (edit_mode) {
             if (!(frame && frame.x == x && frame.y == y)) {
@@ -110,6 +111,7 @@ class BuildTool extends GridTool {
           }
         }
       } else {
+        // not ctrl
         if (box) {
           if (edit_mode) {
             if (!(frame && frame.x == x && frame.y == y)) {
@@ -198,10 +200,18 @@ class BuildTool extends GridTool {
           }
           break;
         case "tab":
-          console.log("You pressed tab");
+          var next_coord = this.next_box(x, y);
+          if (next_coord) {
+            var [x_next, y_next] = next_coord;
+            this._grid.move_frame(x_next, y_next);
+          }
           break;
         case "shift+tab":
-          console.log("You pressed shift+tab");
+          var prev_coord = this.previous_box(x, y);
+          if (prev_coord) {
+            var [x_prev, y_prev] = prev_coord;
+            this._grid.move_frame(x_prev, y_prev);
+          }
           break;
         case "enter":
         case "space":
@@ -269,6 +279,54 @@ class BuildTool extends GridTool {
     let frame = this._grid.get_frame();
     if (frame) {
       this._grid.move_frame(x, y);
+    }
+  }
+
+  next_box(x_start, y_start) {
+    const { y_min, y_max } = this._grid.data.bounds();
+    var x_next = this._grid.data.next_entry_in_row(y_start, x_start + 1);
+    if (x_next) {
+      return [x_next, y_start];
+    } else {
+      var dy, y_bound;
+      if (this._grid.config.lower_left) {
+        dy = -1;
+        y_bound = y_min;
+      } else {
+        dy = 1;
+        y_bound = y_max;
+      }
+      for (let y = y_start + dy; (y_bound - y) * dy >= 0; y += dy) {
+        x_next = this._grid.data.next_entry_in_row(y);
+        if (x_next !== null) {
+          return [x_next, y];
+        }
+      }
+      return null;
+    }
+  }
+
+  previous_box(x_start, y_start) {
+    const { y_min, y_max } = this._grid.data.bounds();
+    var x_prev = this._grid.data.previous_entry_in_row(y_start, x_start - 1);
+    if (x_prev !== null) {
+      return [x_prev, y_start];
+    } else {
+      var dy, y_bound;
+      if (this._grid.config.lower_left) {
+        dy = 1;
+        y_bound = y_max;
+      } else {
+        dy = -1;
+        y_bound = y_min;
+      }
+      for (let y = y_start + dy; (y_bound - y) * dy >= 0; y += dy) {
+        x_prev = this._grid.data.previous_entry_in_row(y);
+        if (x_prev !== null) {
+          return [x_prev, y];
+        }
+      }
+      return null;
     }
   }
 }

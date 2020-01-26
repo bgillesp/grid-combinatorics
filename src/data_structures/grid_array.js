@@ -116,8 +116,8 @@ class GridArray {
 
   column_bounds(x) {
     var y_coords = [];
-    if (x in this._values.keys()) {
-      for (const y of this._values[x].keys()) {
+    if (x in this._values) {
+      for (let [y] of Object.entries(this._values[x])) {
         y_coords.push(y);
       }
     }
@@ -126,10 +126,60 @@ class GridArray {
 
   row_bounds(y) {
     var x_coords = [];
-    for (const x of this._values.keys()) {
+    for (let [x] of Object.entries(this._values)) {
       if (this._has(x, y)) x_coords.push(x);
     }
     return [Math.min(...x_coords), Math.max(...x_coords)];
+  }
+
+  next_entry_in_row(y, x_start) {
+    const [x_min, x_max] = this.row_bounds(y);
+    if (x_min == Infinity) return null;
+    if (x_start !== undefined) {
+      for (let x = x_start; x <= x_max; ++x) {
+        if (this._has(x, y)) return x;
+      }
+      return null;
+    } else {
+      return x_min;
+    }
+  }
+
+  previous_entry_in_row(y, x_start) {
+    const [x_min, x_max] = this.row_bounds(y);
+    if (x_min == Infinity) return null;
+    if (x_start !== undefined) {
+      for (let x = x_start; x >= x_min; --x) {
+        if (this.has(x, y)) return x;
+      }
+      return null;
+    } else {
+      return x_max;
+    }
+  }
+
+  next_entry_in_column(x, y_start) {
+    const [y_min, y_max] = this.column_bounds(y);
+    if (y_min == Infinity) return null;
+    if (y_start !== undefined) {
+      for (let y = y_start; y <= y_max; ++y) {
+        if (this._has(x, y)) return y;
+      }
+    } else {
+      return y_min;
+    }
+  }
+
+  previous_entry_in_column(x, y_start) {
+    const [y_min, y_max] = this.column_bounds(y);
+    if (y_min == Infinity) return null;
+    if (y_start !== undefined) {
+      for (let y = y_start; y >= y_min; --y) {
+        if (this._has(x, y)) return this._get(x, y);
+      }
+    } else {
+      return y_max;
+    }
   }
 
   // TODO test
