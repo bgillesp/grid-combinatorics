@@ -13,7 +13,7 @@
 var config = {
   canvas_size: { width: 800, height: 600 },
   grid_size: { x_min: 0, x_max: 8, y_min: 0, y_max: 8 },
-  lower_left: true
+  lower_left: false
 };
 
 module.exports = config;

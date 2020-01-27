@@ -7,7 +7,6 @@ class ClearGridOperation extends Operation {
 
   execute(app) {
     let boxes = [];
-    console.log(app.grid.data);
     for (const box of app.grid.data.values()) {
       boxes.push({
         x: box.x,

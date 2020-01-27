@@ -10,7 +10,7 @@ const mocha = require("gulp-mocha");
 const nodemon = require("gulp-nodemon");
 const sass = require("gulp-sass");
 const sourcemaps = require("gulp-sourcemaps");
-const minifyJS = require("gulp-uglify");
+const terser = require("gulp-terser");
 const autoprefixer = require("gulp-autoprefixer");
 
 // Other libraries
@@ -151,7 +151,7 @@ function bundle_js() {
     .on("error", log.bind(log, "Browserify Error"))
     .pipe(source("bundle.js"))
     .pipe(buffer())
-    .pipe(cond(PROD, minifyJS()))
+    .pipe(cond(PROD, terser()))
     .pipe(cond(!PROD, sourcemaps.init({ loadMaps: true })))
     .pipe(cond(!PROD, sourcemaps.write()))
     .pipe(gulp.dest(config.paths.baseDir));

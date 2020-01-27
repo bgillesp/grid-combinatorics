@@ -24,6 +24,7 @@ body {
 
 #grid-wrapper {
   display: inline;
+  float: left;
 }
 
 #grid-display {
@@ -34,4 +35,29 @@ body {
 
 #grid-overlay {
   position: relative;
+}
+
+#instructions {
+  width: 400px;
+}
+
+#clear {
+  margin-left: 20px;
+}
+
+#buttons {
+  display: inline-block;
+}
+
+input[type="radio"] {
+  margin-top: -0.5ex;
+  vertical-align: middle;
+}
+
+.control-buttons {
+  width: 250px;
+  padding: 8px 24px;
+  text-align: center;
+  text-decoration: none;
+  font-size: 12pt;
 }

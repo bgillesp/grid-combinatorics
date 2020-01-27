@@ -54,13 +54,12 @@ class Box {
     };
     let grp = new Two.Group();
     grp.add(this.render.box, this.render.label);
-    grp.translation = this.render.loc;
+    grp.translation = this.render.loc.clone();
     this.render.main = grp;
   }
 
-  set_label(label) {
+  set_label_graphic(label) {
     label = String(label);
-    this.label = label;
     let old_label = this.render.label,
       new_label = Box.make_label(label);
     this.render.main.remove(old_label);

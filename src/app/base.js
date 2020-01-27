@@ -20,38 +20,12 @@ const BuildTool = require("../tools/build_tool.js");
 
 var app = {};
 app.hotkeys = hotkeys;
-// hotkeys("*", "scope", (e, handler) => {
-//   console.log("HOTKEYS WORKS");
-// });
 
 let display = $("#grid-display")[0];
 app.display = display;
 
 let grid = new Grid(display, Config);
 app.grid = grid;
-
-let grid_overlay = $("#grid-overlay");
-grid_overlay.on("contextmenu", () => {
-  return false;
-});
-
-let grid_handler = null;
-
-function grid_mousedown(e) {
-  grid_handler.on_mouse_down(e);
-}
-
-function grid_mousemove(e) {
-  grid_handler.on_mouse_move(e);
-}
-
-function grid_mouseup(e) {
-  grid_handler.on_mouse_up(e);
-}
-
-grid_overlay.on("mousedown", grid_mousedown);
-grid_overlay.on("mousemove", grid_mousemove);
-grid_overlay.on("mouseup", grid_mouseup);
 
 var undo_queue = new UndoQueue();
 
@@ -77,86 +51,73 @@ function redo() {
 }
 app.redo = redo;
 
-// Initialize application to nontrivial state
+hotkeys("ctrl+z", "all", () => {
+  undo();
+});
+hotkeys("ctrl+y", "all", () => {
+  redo();
+});
 
-// let coords = [
-//   new Vector(0, 0),
-//   new Vector(1, 0),
-//   new Vector(0, 1),
-//   new Vector(1, 1),
-//   new Vector(2, 0),
-//   new Vector(3, 0),
-//   new Vector(4, 0),
-//   new Vector(0, 2),
-//   new Vector(0, 3)
-// ];
-// let labels = ["1", "2", "3", "4", "5", "6", "7", "8", "9"];
-//
-// let coords = [
-//   new Vector(0, 0),
-//   new Vector(0, 1),
-//   new Vector(0, 2),
-//   new Vector(0, 3),
-//   new Vector(0, 4),
-//   new Vector(0, 5),
-//   new Vector(0, 6),
-//   new Vector(0, 7),
-//   new Vector(1, 0),
-//   new Vector(1, 1),
-//   new Vector(1, 2),
-//   new Vector(1, 3),
-//   new Vector(1, 4),
-//   new Vector(1, 5),
-//   new Vector(1, 6),
-//   new Vector(1, 7),
-//   new Vector(2, 0),
-//   new Vector(2, 1),
-//   new Vector(2, 2),
-//   new Vector(2, 3),
-//   new Vector(2, 4),
-//   new Vector(2, 5),
-//   new Vector(2, 6),
-//   new Vector(2, 7)
-// ];
-//
-// for (let i = 0; i < coords.length; i++) {
-//   let v = coords[i];
-//   let label = "";
-//   let op = new CreateBoxOperation(v.x, v.y, label);
-//   execute(op);
-// }
+let grid_handler = null;
+let move_tool = new MoveTool(app);
+let build_tool = new BuildTool(app);
 
-// Add movement operations to execute, undo, redo, etc.
-//
-// let moves = [
-//   [new Vector(2, 0), new Vector(2, 1)],
-//   [new Vector(1, 0), new Vector(2, 0)],
-//   [new Vector(0, 0), new Vector(1, 0)],
-//   [new Vector(0, 2), new Vector(1, 2)],
-//   [new Vector(0, 1), new Vector(0, 2)],
-//   [new Vector(1, 2), new Vector(2, 2)],
-//   [new Vector(1, 1), new Vector(1, 2)],
-//   [new Vector(1, 0), new Vector(1, 1)]
-// ];
-// moves.reverse();
-//
-// moves.forEach(([old_coord, new_coord]) => {
-//   let [{ x: old_x, y: old_y }, { x: new_x, y: new_y }] = [old_coord, new_coord];
-//   let op = new MoveBoxOperation(old_x, old_y, new_x, new_y);
-//   undo_queue.redo_queue.push(op);
-// });
+let build_tool_radio = $("#build_tool_radio");
+build_tool_radio.on("click", select_build_tool);
+let move_tool_radio = $("#move_tool_radio");
+move_tool_radio.on("click", select_move_tool);
 
-// grid.two.scene.scale *= -1;
+function reset_tool() {
+  if (grid_handler) grid_handler.reset();
+}
 
-// function execute_from_queue(queue) {
-//   return e => {
-//     if (queue.length > 0) {
-//       var op = init_queue.pop();
-//       op.execute(app);
-//       undo_queue.push(op);
-//     }
-//   };
-// }
+function select_tool(tool) {
+  if (grid_handler) grid_handler.disable();
+  if (tool) tool.enable();
+  grid_handler = tool;
+}
+
+function select_build_tool(e) {
+  build_tool_radio[0].checked = true;
+  select_tool(build_tool);
+}
+
+function select_move_tool(e) {
+  move_tool_radio[0].checked = true;
+  select_tool(move_tool);
+}
+
+select_build_tool(build_tool);
+
+hotkeys("b", "all", () => {
+  select_build_tool();
+});
+hotkeys("m", "all", () => {
+  select_move_tool();
+});
+
+// Initialize overlay mouse interaction
+
+let grid_overlay = $("#grid-overlay");
+grid_overlay.on("contextmenu", () => {
+  return false;
+});
+
+function grid_mousedown(e) {
+  grid_handler.on_mouse_down(e);
+}
+
+function grid_mousemove(e) {
+  grid_handler.on_mouse_move(e);
+}
+
+function grid_mouseup(e) {
+  grid_handler.on_mouse_up(e);
+}
+
+grid_overlay.on("mousedown", grid_mousedown);
+grid_overlay.on("mousemove", grid_mousemove);
+grid_overlay.on("mouseup", grid_mouseup);
 
 function undo_click(e) {
   undo();
@@ -179,68 +140,11 @@ redo_button.on("click", redo_click);
 let clear_button = $("#clear");
 clear_button.on("click", clear_click);
 
-var move_tool = new MoveTool(app);
-var build_tool = new BuildTool(app);
-
-function reset_tool() {
-  if (grid_handler) grid_handler.reset();
-}
-
-function select_tool(tool) {
-  if (grid_handler) grid_handler.disable();
-  if (tool) tool.enable();
-  grid_handler = tool;
-}
-
-function select_build_tool(e) {
-  select_tool(build_tool);
-}
-
-function select_move_tool(e) {
-  select_tool(move_tool);
-}
-
-let build_tool_radio = $("#build_tool_radio");
-build_tool_radio.on("click", select_build_tool);
-let move_tool_radio = $("#move_tool_radio");
-move_tool_radio.on("click", select_move_tool);
-
-select_tool(build_tool);
-build_tool_radio[0].checked = true;
-
-// while (init_queue.length > 0) {
-//   var op = init_queue.pop();
-//   op.execute(app);
-//   undo_queue.push(op);
-// }
-
-// function add_interactivity(shape) {
-//   var onclick = e => {
-//     e.preventDefault();
-//     console.log(e);
-//   };
-// }
-
 // function animate(time) {
 //   requestAnimationFrame(animate);
 //   Tween.update(time);
 // }
 // requestAnimationFrame(animate);
-
-//////////// TEST ANIMATION ///
-// let box = grid.get(4);
-// let anim1 = new Tween.Tween(box.render.main.translation)
-//   .to({ x: 2, y: 1 }, 1000)
-//   .easing(Tween.Easing.Quadratic.Out);
-//
-// let anim2 = new Tween.Tween(box.render.main.translation)
-//   .to({ x: 2, y: 0 }, 1000)
-//   .easing(Tween.Easing.Quadratic.Out);
-//
-// anim1.chain(anim2);
-// anim2.chain(anim1);
-// anim1.start();
-///////////// END TEST ANIMATION ///
 
 var animation_group = app.grid.get_animation_manager().get_tween_group();
 grid.two.bind("update", function(frameCount) {

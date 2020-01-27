@@ -11,28 +11,44 @@
   <!-- ======== -->
   <section id="tableau-app">
     <header id="header">
-      <h1>Tableau Workspace</h1>
+      <h1>Tableau Editor</h1>
     </header>
     <section id="main">
       <fieldset id="grid-wrapper">
-        <!-- <legend>Tableau Display</legend> -->
+        <legend>Workspace</legend>
         <div id="grid-overlay">
           <div id="grid-display">
           </div>
         </div>
+        <div id="buttons">
+          <p>
+            <button type="button" class="control-buttons" id="undo">Undo (Ctrl+z)</button>
+            <button type="button" class="control-buttons" id="redo">Redo (Ctrl+y)</button>
+            <button type="button" class="control-buttons" id="clear">Clear</button>
+          </p>
+        </div>
       </fieldset>
-      <p>
-        <button type="button" id="undo">Undo</button>
-        <button type="button" id="redo">Redo</button>
-        <button type="button" id="clear">Clear</button>
-      </p>
-      <p>
-        <input type="radio" name="tool" name="build_tool_radio" id="build_tool_radio" value="build">
-        <label for="build_tool_radio">Build Tool</label>
-        <br/>
-        <input type="radio" name="tool" name="move_tool_radio" id="move_tool_radio" value="move">
-        <label for="move_tool_radio">Move Tool</label>
-      </p>
+      <fieldset id="instructions">
+        <legend>Tools</legend>
+        <!-- <p><b>Controls:</b></p> -->
+        <p><input type="radio" name="tool" name="build_tool_radio" id="build_tool_radio" value="build">
+        <label for="build_tool_radio"><b>B</b>uild Tool:</label>
+          <ul>
+            <li>Left click to select a location</li>
+            <li>Numbers to create a box with a given label or change a label</li>
+            <li>Backspace to delete a label or remove a box</li>
+            <li>Arrow keys or tab/enter to navigate</li>
+            <li>Ctrl + left click and drag to create empty boxes</li>
+            <li>Right click and drag to remove boxes</li>
+          </ul>
+        </p>
+        <p><input type="radio" name="tool" name="move_tool_radio" id="move_tool_radio" value="move">
+        <label for="move_tool_radio"><b>M</b>ove Tool:</label>
+          <ul>
+            <li>Left click and drag to move boxes</li>
+          </ul>
+        </p>
+      </fieldset>
     </section>
   </section>
   <!-- ========= -->

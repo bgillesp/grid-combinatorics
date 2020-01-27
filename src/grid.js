@@ -82,7 +82,6 @@ class Grid {
     let grp = new Two.Group();
     const { x_min, x_max, y_min, y_max } = this.viewport_params;
     var x_axis, y_axis, origin_x, origin_y;
-    console.log("grid bounds:", x_min, x_max, y_min, y_max);
     if (lower_left) {
       origin_x = x_min - 0.075;
       origin_y = y_max + 0.075;
@@ -143,6 +142,12 @@ class Grid {
     this._animate_remove(box);
   }
 
+  set_label(x, y, label) {
+    const box = this.data.get(x, y);
+    this._animate_change_label(box, label);
+    box.label = label;
+  }
+
   bulk_remove(values) {
     let boxes = [];
     values.forEach(val => {
@@ -163,7 +168,7 @@ class Grid {
   move(x_start, y_start, x_end, y_end) {
     let box = this.get(x_start, y_start);
     this.data.move(x_start, y_start, x_end, y_end);
-    this._animate_move(box.render.main, x_end, y_end);
+    this._animate_move(box.render, x_start, y_start, x_end, y_end);
     box.x = x_end;
     box.y = y_end;
   }
@@ -189,7 +194,7 @@ class Grid {
   move_frame(end_x, end_y) {
     if (this.highlight_frame) {
       let frame = this.highlight_frame;
-      this._animate_move(frame.render.main, end_x, end_y);
+      this._animate_move(frame.render, frame.x, frame.y, end_x, end_y);
       frame.x = end_x;
       frame.y = end_y;
     }
@@ -218,14 +223,16 @@ class Grid {
   grid_coords_visible(x, y) {
     const { x_min, x_max, y_min, y_max } = this.viewport_params;
     return x >= x_min && x < x_max && y >= y_min && y < y_max;
-    // if (this.config.lower_left) {
-    //
-    // } else {
-    //
-    // }
-    //
-    // // console.log(x_min, x_max, y_min, y_max, x, y);
-    // return x >= x_min && x < x_max && y >= y_min && y < y_max;
+  }
+
+  static _clamp(val, min, max) {
+    return val < min ? min : val > max ? max : val;
+  }
+
+  // clamp grid coordinates into the visible range
+  grid_coords_clamped(x, y) {
+    const { x_min, x_max, y_min, y_max } = this.viewport_params;
+    return [Grid._clamp(x, x_min, x_max - 1), Grid._clamp(y, y_min, y_max - 1)];
   }
 
   set_viewport(x_min, x_max, y_min, y_max, border = 0.1) {
@@ -237,7 +244,6 @@ class Grid {
       y_max,
       border
     );
-    console.log(this.viewport_params);
     return this.viewport_params;
   }
 
@@ -245,10 +251,20 @@ class Grid {
     return this.animation_manager;
   }
 
-  _animate_move(render, x, y, params = {}) {
-    const { duration = 200, easing = Tween.Easing.Quadratic.Out } = params;
-    let anim = new Tween.Tween(render.translation)
-      .to({ x: x, y: y }, duration)
+  _animate_move(render, x_start, y_start, x_end, y_end, params = {}) {
+    const { duration = 200, easing = Tween.Easing.Quadratic.Out } = params,
+      loc = render.loc,
+      trans = render.main.translation;
+    let vals = { x: x_start, y: y_start },
+      end = { x: x_end, y: y_end };
+    let anim = new Tween.Tween(vals)
+      .to(end, duration)
+      .onUpdate(() => {
+        loc.x = vals.x;
+        loc.y = vals.y;
+        trans.x = vals.x;
+        trans.y = vals.y;
+      })
       .easing(easing);
     this.animation_manager.add(anim);
   }
@@ -280,8 +296,8 @@ class Grid {
         var render = b.render.main;
         render.scale = params.scale;
         render.opacity = params.opacity;
-        render.translation.x = b.x + params.translate_x;
-        render.translation.y = b.y + params.translate_y;
+        render.translation.x = b.render.loc.x + params.translate_x;
+        render.translation.y = b.render.loc.y + params.translate_y;
       });
     });
     this.animation_manager.add(anim);
@@ -320,6 +336,13 @@ class Grid {
           this.two.remove(b.render.main);
         });
       });
+    this.animation_manager.add(anim);
+  }
+
+  _animate_change_label(box, label) {
+    let anim = new Tween.Tween({}).to({}, 0).onComplete(() => {
+      box.set_label_graphic(label);
+    });
     this.animation_manager.add(anim);
   }
 

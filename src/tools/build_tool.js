@@ -11,20 +11,14 @@ const edit_mode_hotkeys = [
   "tab",
   "shift+tab",
   "enter",
+  "shift+enter",
   "space",
   "esc",
   "backspace",
-  "0",
-  "1",
-  "2",
-  "3",
-  "4",
-  "5",
-  "6",
-  "7",
-  "8",
-  "9"
+  "*"
 ];
+
+const tab_stop_reset_hotkeys = ["up", "down", "left", "right"];
 
 class BuildTool extends GridTool {
   constructor(app) {
@@ -33,14 +27,20 @@ class BuildTool extends GridTool {
       mouse_pressed: false,
       create_mode: false,
       delete_mode: false,
-      edit_mode: false
+      edit_mode: false,
+      tab_stop: null
     };
     this._keymanager = {
       hotkeys: app.hotkeys,
       scope: "build_tool"
     };
+    let e_hotkeys = "";
+    edit_mode_hotkeys.forEach((str, i) => {
+      e_hotkeys += str;
+      if (i != edit_mode_hotkeys.length - 1) e_hotkeys += ",";
+    });
     this._keymanager.hotkeys(
-      "up,down,left,right,tab,shift+tab,enter,space,esc,backspace,0,1,2,3,4,5,6,7,8,9",
+      e_hotkeys,
       this._keymanager.scope,
       (e, handler) => {
         this.on_keypress(e, handler);
@@ -65,6 +65,7 @@ class BuildTool extends GridTool {
         state.create_mode = true;
         state.delete_mode = false;
         state.edit_mode = false;
+        state.tab_stop = null;
         this._grid.remove_frame();
         this._keymanager.hotkeys.setScope("all");
         break;
@@ -72,6 +73,7 @@ class BuildTool extends GridTool {
         state.create_mode = false;
         state.delete_mode = true;
         state.edit_mode = false;
+        state.tab_stop = null;
         this._grid.remove_frame();
         this._keymanager.hotkeys.setScope("all");
         break;
@@ -79,6 +81,7 @@ class BuildTool extends GridTool {
         state.create_mode = false;
         state.delete_mode = false;
         state.edit_mode = true;
+        state.tab_stop = null;
         this._grid.remove_frame();
         this._keymanager.hotkeys.setScope(this._keymanager.scope);
         break;
@@ -86,6 +89,7 @@ class BuildTool extends GridTool {
         state.create_mode = false;
         state.delete_mode = false;
         state.edit_mode = false;
+        state.tab_stop = null;
         this._grid.remove_frame();
         this._keymanager.hotkeys.setScope("all");
         break;
@@ -95,10 +99,18 @@ class BuildTool extends GridTool {
   on_mouse_down(e) {
     const { x, y, box, frame } = this.parse_mouse_event(e);
     const { create_mode, delete_mode, edit_mode } = this._state;
-    if (e.button == 0) {
-      // left click
-      if (e.ctrlKey) {
-        // ctrl
+    if (e.ctrlKey) {
+      if (e.button == 0) {
+        this._set_mode("create");
+        if (this._grid.grid_coords_visible(x, y)) {
+          this.make_box(x, y);
+        }
+      } else if (e.button == 2) {
+        this._set_mode("delete");
+        if (box) this.delete_box(x, y);
+      }
+    } else {
+      if (e.button == 0) {
         if (this._grid.grid_coords_visible(x, y)) {
           if (edit_mode) {
             if (!(frame && frame.x == x && frame.y == y)) {
@@ -110,38 +122,58 @@ class BuildTool extends GridTool {
             this._grid.add_frame(x, y);
           }
         }
-      } else {
-        // not ctrl
-        if (box) {
-          if (edit_mode) {
-            if (!(frame && frame.x == x && frame.y == y)) {
-              this._grid.remove_frame();
-              this._grid.add_frame(x, y);
-            }
-          } else {
-            this._set_mode("edit");
-            this._grid.add_frame(x, y);
-          }
-        } else {
-          if (edit_mode) {
-            this._set_mode(null);
-          } else {
-            this._set_mode("create");
-            if (this._grid.grid_coords_visible(x, y)) {
-              this.make_box(x, y);
-            }
-          }
-        }
-      }
-    } else if (e.button == 2) {
-      // right click
-      if (this._state.edit_mode) {
-        this._set_mode(null);
-      } else {
+      } else if (e.button == 2) {
         this._set_mode("delete");
         if (box) this.delete_box(x, y);
       }
     }
+    // if (e.button == 0) {
+    //   // left click
+    //   if (e.ctrlKey) {
+    //     // ctrl
+    //     if (this._grid.grid_coords_visible(x, y)) {
+    //       if (edit_mode) {
+    //         if (!(frame && frame.x == x && frame.y == y)) {
+    //           this._grid.remove_frame();
+    //           this._grid.add_frame(x, y);
+    //         }
+    //       } else {
+    //         this._set_mode("edit");
+    //         this._grid.add_frame(x, y);
+    //       }
+    //     }
+    //   } else {
+    //     // not ctrl
+    //     if (box) {
+    //       if (edit_mode) {
+    //         if (!(frame && frame.x == x && frame.y == y)) {
+    //           this._grid.remove_frame();
+    //           this._grid.add_frame(x, y);
+    //         }
+    //       } else {
+    //         this._set_mode("edit");
+    //         this._grid.add_frame(x, y);
+    //       }
+    //     } else {
+    //       if (edit_mode) {
+    //         this._set_mode(null);
+    //       } else {
+    //         this._set_mode("create");
+    //         if (this._grid.grid_coords_visible(x, y)) {
+    //           this.make_box(x, y);
+    //         }
+    //       }
+    //     }
+    //   }
+    // } else if (e.button == 2) {
+    //   // right click
+    //   if (this._state.edit_mode) {
+    //     this._set_mode(null);
+    //   } else {
+    //     this._set_mode("delete");
+    //     if (box) this.delete_box(x, y);
+    //   }
+    // }
     this._state.mouse_pressed = true;
   }
 
@@ -171,13 +203,24 @@ class BuildTool extends GridTool {
   on_keypress(e, handler) {
     // (only takes keyboard input in edit mode)
     if (this._state.edit_mode) {
-      e.preventDefault();
-      const params = this.parse_mouse_event(e);
-      const key = String(handler.key),
-        frame = this._grid.get_frame(),
+      const frame = this._grid.get_frame(),
+        tab_stop = this._state.tab_stop,
         x = frame.x,
         y = frame.y;
-      let box = this._grid.get_highlighted_box();
+      let key = String(handler.key),
+        box = this._grid.get_highlighted_box();
+      if (key === "*") {
+        // check for numerical key inputs
+        // this is a workaround for numerical keypad input, which doesn't work
+        // on some systems
+        const event_key = parseInt(e.key, 10);
+        if (Number.isInteger(event_key)) {
+          key = String(event_key);
+        } else {
+          return;
+        }
+      }
+      e.preventDefault();
       switch (key) {
         case "up":
           if (this._grid.grid_coords_visible(x, y - 1)) {
@@ -199,21 +242,6 @@ class BuildTool extends GridTool {
             this._grid.move_frame(x + 1, y);
           }
           break;
-        case "tab":
-          var next_coord = this.next_box(x, y);
-          if (next_coord) {
-            var [x_next, y_next] = next_coord;
-            this._grid.move_frame(x_next, y_next);
-          }
-          break;
-        case "shift+tab":
-          var prev_coord = this.previous_box(x, y);
-          if (prev_coord) {
-            var [x_prev, y_prev] = prev_coord;
-            this._grid.move_frame(x_prev, y_prev);
-          }
-          break;
-        case "enter":
         case "space":
           if (!box && this._grid.grid_coords_visible(x, y)) {
             this.make_box(x, y);
@@ -221,8 +249,35 @@ class BuildTool extends GridTool {
           break;
         case "esc":
           // end edit mode
-          this._grid.remove_frame();
-          this._keymanager.hotkeys.setScope("all");
+          this._set_mode(null);
+          break;
+        case "tab":
+          if (tab_stop === null) {
+            this._state.tab_stop = x;
+          }
+          this.move_frame(...this._grid.grid_coords_clamped(x + 1, y));
+          break;
+        case "shift+tab":
+          if (tab_stop === null) {
+            this._state.tab_stop = x;
+          }
+          this.move_frame(...this._grid.grid_coords_clamped(x - 1, y));
+          break;
+        case "enter":
+          this.move_frame(
+            ...this._grid.grid_coords_clamped(
+              tab_stop !== null ? tab_stop : x,
+              y + 1
+            )
+          );
+          break;
+        case "shift+enter":
+          this.move_frame(
+            ...this._grid.grid_coords_clamped(
+              tab_stop !== null ? tab_stop : x,
+              y - 1
+            )
+          );
           break;
         case "backspace":
           if (box) {
@@ -237,15 +292,20 @@ class BuildTool extends GridTool {
           break;
         default:
           if (!box && this._grid.grid_coords_visible(x, y)) {
-            this.make_box(x, y);
+            this.make_box(x, y, key);
             box = this._grid.get(x, y);
-          }
-          var label = box.label;
-          if (label.length < 2) {
-            label += key;
-            this.set_label(x, y, label);
+          } else {
+            var label = box.label;
+            if (label.length < 2) {
+              label += key;
+              this.set_label(x, y, label);
+            }
           }
           break;
+      }
+      // reset tab stop when otherwise navigating
+      if (tab_stop_reset_hotkeys.includes(key)) {
+        this._state.tab_stop = null;
       }
     }
   }
@@ -275,6 +335,7 @@ class BuildTool extends GridTool {
     }
   }
 
+  // move the frame to a given x and y coordinate
   move_frame(x, y) {
     let frame = this._grid.get_frame();
     if (frame) {

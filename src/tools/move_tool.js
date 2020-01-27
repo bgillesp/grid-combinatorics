@@ -75,7 +75,6 @@ class MoveTool extends GridTool {
       const { x, y } = this._get_local_coords(e);
       const [x_box, y_box] = [box.x, box.y];
       const [dx, dy] = [x - (x_box + 0.5), y - (y_box + 0.5)];
-      // console.log("dx: ", dx, "dy: ", dy);
       this._state.avail_regions.forEach((is_avail, index) => {
         if (is_avail) {
           const region = regions[index];

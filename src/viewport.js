@@ -40,7 +40,6 @@ function set_viewport(
   // only require border on axis side
   var vis_x_width = (w - 2 * border_px) / scale;
   var vis_y_width = (h - 2 * border_px) / scale;
-  console.log("vis width", vis_x_width, vis_y_width);
   if (flip_y) {
     return {
       x_min: Math.ceiling(x_max - vis_x_width),

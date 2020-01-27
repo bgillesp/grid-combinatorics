@@ -11,16 +11,14 @@ class SetBoxLabelOperation extends Operation {
 
   execute(app) {
     const { x, y, label } = this.params;
-    const box = app.grid.get(x, y);
-    this.memory.label = box.label;
-    box.set_label(label);
+    this.memory.label = app.grid.get(x, y).label;
+    app.grid.set_label(x, y, label);
   }
 
   undo(app) {
     const { x, y } = this.params;
     const { label: old_label } = this.memory;
-    const box = app.grid.get(x, y);
-    box.set_label(old_label);
+    app.grid.set_label(x, y, old_label);
   }
 }
 

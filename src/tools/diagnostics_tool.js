@@ -26,7 +26,6 @@ class DiagnosticsTool extends GridTool {
       const loc = this._get_local_coords(e);
       this._circle.translation = loc;
     }
-    // console.log(loc);
   }
 
   on_mouse_up(e) {
