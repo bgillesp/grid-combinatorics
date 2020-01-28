@@ -8,8 +8,8 @@ function basicFrame() {
     strokeWidth: 0.05,
     gap: 0.02,
     cornerRadius: 0.15,
-    stroke: "#ff0f",
-    fill: "#ff03"
+    stroke: "#0f0f",
+    fill: "#0f03"
   };
   params.sideLength = 1 - (2 * params.gap + params.strokeWidth);
   // construct frame
