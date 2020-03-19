@@ -144,6 +144,9 @@ const default_build = gulp.series(
   gulp.parallel(server, watch)
 );
 
+// Single command to bundle app
+const bundle = gulp.series(clean, html, css, bundle_js, fonts);
+
 // Bundles our JS using browserify. Sourcemaps are used in development, while minification is used in production.
 function bundle_js() {
   return b
@@ -158,6 +161,7 @@ function bundle_js() {
 }
 
 exports.default = default_build;
+exports.bundle = bundle;
 exports.clean = clean;
 exports.lint = lint;
 exports.test = test;
