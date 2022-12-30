@@ -34,7 +34,7 @@
     "gulp-cond": "^1.0.0",
     "gulp-eslint": "^6.0.0",
     "gulp-livereload": "^4.0.1",
-    "gulp-mocha": "^7.0.1",
+    "gulp-mocha": "^8.0.0",
     "gulp-nodemon": "^2.4.2",
     "gulp-sass": "^4.0.2",
     "gulp-sourcemaps": "^2.6.5",
